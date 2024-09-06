@@ -20,5 +20,7 @@ youtube ready ;) örnek: https://youtu.be/7FNgj4Gm-0Y?si=DddJXPz7JN5YP6zA
 
 # Gereksinimler
 python (additional packages)
+
 pycharm (python ide)
+
 google cloud console
