@@ -14,5 +14,6 @@ vurgu için temel algoritmalar ve bir takım text mining.
 TTS'ten dönen küçük parçaları birleştir. google TTS api 5000 karaktere kadar kabul ediyor. 
 
 **create_mp4.py**
-dilerseniz ses dosyasına bir resim ekleyerek videoya dönüştürün. youtube ready ;) 
-örnek: https://youtu.be/7FNgj4Gm-0Y?si=DddJXPz7JN5YP6zA 
+dilerseniz ses dosyasına bir resim ekleyerek videoya dönüştürün.
+
+youtube ready ;) örnek: https://youtu.be/7FNgj4Gm-0Y?si=DddJXPz7JN5YP6zA 
