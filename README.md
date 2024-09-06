@@ -4,7 +4,7 @@ Türkçe kelimelerdeki gizli vurguları TTS'in anlamasını sağlar. Böylece di
 **givenText.txt**
 TTS'e iletilecek metin
 
-**text2speechLargeText.py **
+**text2speechLargeText.py**
 uygulama buradan run edilir.
 
 **functions.py**
