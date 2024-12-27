@@ -17,6 +17,7 @@ TTS'ten dönen küçük parçaları birleştir. google TTS api 5000 karaktere ka
 dilerseniz ses dosyasına bir resim ekleyerek videoya dönüştürün.
 
 örnek: https://www.youtube.com/playlist?list=PLf1m99shAJb3nJBRfDoBnAJOjKKZbnFwo
+
 youtube kanalıma abone olmayı unutmayın, teşekkürler :) 
 
 # Gereksinimler
