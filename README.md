@@ -16,7 +16,8 @@ TTS'ten dönen küçük parçaları birleştir. google TTS api 5000 karaktere ka
 **create_mp4.py**
 dilerseniz ses dosyasına bir resim ekleyerek videoya dönüştürün.
 
-youtube ready ;) örnek: https://youtu.be/7FNgj4Gm-0Y?si=DddJXPz7JN5YP6zA 
+örnek: https://www.youtube.com/playlist?list=PLf1m99shAJb3nJBRfDoBnAJOjKKZbnFwo
+youtube kanalıma abone olmayı unutmayın, teşekkürler :) 
 
 # Gereksinimler
 python (additional packages)
