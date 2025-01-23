@@ -21,7 +21,8 @@ dilerseniz ses dosyasına bir resim ekleyerek videoya dönüştürün.
 youtube kanalıma abone olmayı unutmayın, teşekkürler :) 
 
 # Gereksinimler
-### python (additional packages)
-### pycharm (python ide)
+### pycharm (preferred ide)
+### python3.13 (additional packages: google-cloud-texttospeech, pydub, mutagen, audioop-lts, moviepy)
+### ffmpeg (https://github.com/BtbN/FFmpeg-Builds/releases) & add path to system environment 
 ### google cloud 
 auth: https://cloud.google.com/docs/authentication/application-default-credentials
