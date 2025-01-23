@@ -35,16 +35,18 @@ def combine_mp3_files(directory, output_file, title, artist, album):
 if __name__ == "__main__":
     # Input directory containing MP3 files
     input_directory = "d:/books/ders/output"
-    album_artist = "alperyz"
-    creator = "alperyz"
-    album = "auzef"
+    album_artist = "Your Category"
+    creator = "Your Nickname"
+    album = "Your Album"
+    title = "Your Title"
 
     # Define the tags
-    artist = "Sosyoloji Tarihi 1"
-    title = "Sesli Kitap"
+    #artist = "Sosyoloji Tarihi 2"
+
 
     # Output file name with path
     output_file = f"d:/books/ders/{artist}_{title}.mp3"
     # Combine MP3 files in the input directory and set tags
     combine_mp3_files(input_directory, output_file, title, artist, album)
     print("MP3 files combined and tagged successfully!")
+
