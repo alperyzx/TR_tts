@@ -21,8 +21,7 @@ dilerseniz ses dosyasına bir resim ekleyerek videoya dönüştürün.
 youtube kanalıma abone olmayı unutmayın, teşekkürler :) 
 
 # Gereksinimler
-python (additional packages)
-
-pycharm (python ide)
-
-google cloud console
+### python (additional packages)
+### pycharm (python ide)
+### google cloud 
+auth: https://cloud.google.com/docs/authentication/application-default-credentials
