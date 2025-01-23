@@ -80,7 +80,7 @@ def addSsml(mdText):
                     ssml_output = replace_numbers(ssml_output)
                     print(f'\nSSML output OK: {len(ssml_output)} passing it to text2speech')
                     print(f'addSsml: \n{ssml_output}')
-                    #text2speech(ssml_output)
+                    text2speech(ssml_output)
 
                     # Start a new SSML output
                     ssml_output = "<speak><p>\n <break time=\"1s\"/>\n"
@@ -99,7 +99,7 @@ def addSsml(mdText):
         ssml_output = replace_numbers(ssml_output)
         print(f'\nSSML output OK: {len(ssml_output)} passing it to text2speech')
         print(f'addSsml: \n{ssml_output}')
-        #text2speech(ssml_output)
+        text2speech(ssml_output)
 
     return ssml_output
 
@@ -143,7 +143,7 @@ def split_yle(text):
             stripped_word = words[j].rstrip(string.punctuation)
 
             # If the stripped word ends with "yle" or "yla", its length is more than 6, and it does not already contain an apostrophe before "yle" or "yla"
-            if stripped_word.endswith(("yle", "yla")) and len(stripped_word) > 6 and not stripped_word[-4] == "’":
+            if stripped_word.endswith(("yle", "yla")) and len(stripped_word) > 5 and not stripped_word[-4] == "’":
                 # Replace "yle" or "yla" with "'yle" or "'yla", preserving any trailing punctuation
                 words[j] = stripped_word[:-3] + "’" + stripped_word[-3:] + words[j][len(stripped_word):]
 
@@ -210,18 +210,19 @@ rules2 = {
 }
 
 rules3 = {
-    "için": {"stripMark": True, "range": (3, 1)},
+    "için": {"stripMark": True, "range": (3, 2)},
     "ile": {"stripMark": True, "range": (2, 2)},
     "hem": {"stripMark": True, "range": (1, 1)},
     "gibi": {"stripMark": True, "range": (3, 3)},
     "bile": {"stripMark": True, "range": (1, 1)},
-    "daha": {"stripMark": True, "range": (2, 2)},
+    "daha": {"stripMark": True, "range": (3, 2)},
     "göre": {"stripMark": True, "range": (1, 2)},
     "değil": {"stripMark": True, "range": (1, 1)},
     "hangi": {"stripMark": True, "range": (1, 2)},
     "yani": {"stripMark": True, "range": (1, 1)},
-    "kadar": {"stripMark": True, "range": (1, 1)},
+    "kadar": {"stripMark": True, "range": (2, 3)},
     "bilakis": {"stripMark": True, "range": (1, 1)},
+    "karşın": {"stripMark": True, "range": (1, 1)},
     "üzere": {"stripMark": True, "range": (1, 1)},
     "yoksa": {"stripMark": True, "range": (1, 1)},
     "özellikle": {"stripMark": True, "range": (1, 1)},
@@ -249,9 +250,8 @@ def firstCheck(ftext):
     # ftext = re.sub(r'\bya\b', ',ya', ftext)
     ftext = re.sub(r'(?<![’\w])ya\b', '¿ya', ftext)
 
-    ftext = re.sub(r'n’un', 'nun', ftext)
-    ftext = re.sub(r'n’a', 'na', ftext)
-    ftext = re.sub(r's’', 's', ftext)
+    ftext = re.sub(r'on’', 'on', ftext)
+       # ftext = re.sub(r's’', 's', ftext)
     ftext = re.sub(r't’', 't', ftext)
     ftext = re.sub(r"'", "’", ftext)  #replace ' with ’ -- tts engine reads ’ better.
     print(f'firstCheck: {ftext}')
@@ -263,16 +263,24 @@ def repParen(rtext):
     rtext = re.sub(r'\.\s*”', '”.', rtext)
     rtext = re.sub(r'(?=\S)([^\.])\s*$', r'\1!!', rtext, flags=re.MULTILINE)
     rtext = rtext.replace(":", "!:.")
-    rtext = re.sub(r'\bmö\b\.?', 'milattan önce ', rtext)
+    rtext = re.sub(r'\bmö\b\.?|\bm\.ö\.|\bmö\s\.?', 'milattan önce ', rtext)
+    rtext = re.sub(r'\biö\b\.?', 'isadan önce ', rtext)
+    rtext = re.sub(r'\bms\b\.?|\bms\s\.?|\bm\.s\.', 'milattan sonra ', rtext)
+    rtext = re.sub(r'\bi\.s\.', 'isadan sonra ', rtext)
+    #rtext = re.sub(r'\bmö\s\.?', 'milattan önce', rtext)
+    #rtext = re.sub(r'\bm\.ö\.', 'milattan önce', rtext)
+    #rtext = re.sub(r'\bmö\b\.?', 'milattan önce', rtext)
+    #rtext = re.sub(r'\bms\b\.?', 'milattan sonra', rtext)
+    #rtext = re.sub(r'\bms\s\.?', 'milattan sonra', rtext)
+    #rtext = re.sub(r'\bm\.s\.', 'milattan sonra', rtext)
+    rtext = re.sub(r'\börn\b\.?', 'örneğin ', rtext)
     rtext = re.sub(r'\bayr\b\.?', 'ayrıca ', rtext)
     rtext = re.sub(r'\böl\b\.?', 'ölümü ', rtext)
     rtext = re.sub(r'\bö\b\.?', 'ölümü ', rtext)
-    rtext = re.sub(r'\bmö\s\.?', 'milattan önce', rtext)
-    rtext = re.sub(r'\bm\.ö\.', 'milattan önce', rtext)
-    rtext = re.sub(r'\bms\b\.?', 'milattan sonra', rtext)
-    rtext = re.sub(r'\bms\s\.?', 'milattan sonra', rtext)
-    rtext = re.sub(r'\bm\.s\.', 'milattan sonra', rtext)
     rtext = re.sub(r'\bakt\b\.?', 'aktaran ', rtext)
+    rtext = re.sub(r'\bark\b\.?', 'arkadaşları. ', rtext)
+    rtext = re.sub(r'\bykl\b\.?', 'yaklaşık ', rtext)
+    rtext = re.sub(r'\bslt\b\.?', 'saltanatı ', rtext)
     #rtext = re.sub(r'\byön\b\.?', 'yönetmen ', rtext)
     # rtext = re.sub(r'\bder\b\.?', 'derleyen ', rtext)
     rtext = re.sub(r'\bçev\b\.?', 'çeviren ', rtext)
@@ -325,11 +333,12 @@ def repWords(mtext):
     # mtext = re.sub(r'\bnesney(\w*)\b', r'nesne’y\1', mtext)
     mtext = re.sub(r'\bkurcala(\w*)\b', r'kurca’la\1', mtext)
     mtext = re.sub(r'\btelakki(\w*)\b', r'telak’ki\1', mtext)
+    mtext = re.sub(r'\bapeiron(\w*)\b', r'apei-ron\1', mtext)
     # mtext = re.sub(r'\bfelsefey(\w*)\b', r'felsefe’y\1', mtext)
     # mtext = re.sub(r'\bçerçevey(\w*)\b', r'çerçeve’y\1', mtext)
 
     mtext = re.sub(r'\bseyyah(\w*)\b', r'seyyah’\1', mtext)
-    mtext = re.sub(r'\bmeta(\w*)\b', r'meta’\1', mtext)
+    #mtext = re.sub(r'\bmeta(\w*)\b', r'meta’\1', mtext)
     mtext = re.sub(r'\bkapitalizm(\w*)\b', r'kapitalizm’\1', mtext)
     mtext = re.sub(r'\bsosyalizm(\w*)\b', r'sosyalizm’\1', mtext)
     mtext = re.sub(r'\bkur’an(\w*)\b', r'kuran\1', mtext)
@@ -380,15 +389,16 @@ def repWords(mtext):
     mtext = re.sub(r'\btatianus(\w*)\b', r'tatyanus\1', mtext)
     mtext = re.sub(r'\btatien(\w*)\b', r'tatyen\1', mtext)
     mtext = re.sub(r'\bpantene(\w*)\b', r'panten\1', mtext)
+    mtext = re.sub(r'\bkenny(\w*)\b', r'kenni\1', mtext)
 
     mtext = re.sub(r'i̇bn\s', 'ibni ', mtext)
     mtext = re.sub(r'batıl\s', 'baatıl', mtext)
     mtext = re.sub(r'\bibn\s', 'ibni ', mtext)
     mtext = re.sub(r'\bsiyasî(\w*)\b', r'siyasi\1', mtext)
     mtext = re.sub(r'\bmekâni(\w*)\b', r'mekani\1', mtext)
-    mtext = re.sub(r'\bplaton(\w*)\b', r"plato'n\1", mtext)
-    mtext = re.sub(r'\bklement(\w*)\b', r"klem'ent\1", mtext)
-    mtext = re.sub(r'\borigenes(\w*)\b', r"ori-gene's\1", mtext)
+    mtext = re.sub(r'\bplaton(\w*)\b', r"plato’n\1", mtext)
+    mtext = re.sub(r'\bklement(\w*)\b', r"klem’ent\1", mtext)
+    mtext = re.sub(r'\borigenes(\w*)\b', r"ori-gene’s\1", mtext)
     mtext = re.sub(r'\bpahl(\w*)\b', r"pah'l\1", mtext)
 
     mtext = re.sub(r'\bfakat \b', 'fakat¿ ', mtext)
@@ -415,6 +425,7 @@ def repWords(mtext):
     mtext = re.sub(r'\bbile \b', 'bile¿ ', mtext)
     mtext = re.sub(r'\bile \b', 'ile¿ ', mtext)
     mtext = re.sub(r'\biçin \b', 'için¿ ', mtext)
+    mtext = re.sub(r'\bkarşın \b', 'karşın¿ ', mtext)
     mtext = re.sub(r'\bancak\b', '¿ancak', mtext)
     mtext = re.sub(r'\bhatta\b', '¿hatta', mtext)
     mtext = re.sub(r'\bbir taraftan\b', '¿bir taraftan', mtext)
@@ -453,6 +464,7 @@ def lastCheck(text):
     text = re.sub(r"’(?=\s|$)", " ", text)
     text = re.sub(r"(\w+)’,", r"\1,", text)
     text = text.replace("¿hem de¿", "¿hem de")
+    text = text.replace("çok ¿daha", "çok daha")
     text = apply_simplified_rules(text, rules2)
 
     print(f'lastCheck: {text}')
@@ -470,4 +482,3 @@ def wrapSoftloud(wtext):
     wtext = re.sub(r'\((.*?)\)', r'<prosody volume="soft">(\1)</prosody>', wtext, flags=re.IGNORECASE)
     print(f'loudSoft: {wtext}')
     return wtext
-
