@@ -13,7 +13,12 @@ def text2speech(text, language_code="tr-TR", voice_name="tr-TR-Standard-E"):
     client = texttospeech.TextToSpeechClient()
     synthesis_input = texttospeech.SynthesisInput(ssml=text)
     voice = texttospeech.VoiceSelectionParams(language_code=language_code, name=voice_name)
-    audio_config = texttospeech.AudioConfig(audio_encoding=texttospeech.AudioEncoding.MP3)
+    audio_config = texttospeech.AudioConfig(audio_encoding=texttospeech.AudioEncoding.MP3,
+                                            speaking_rate=1.0,  # Set speaking rate, max 4.0 min 0.25
+                                            pitch=+8.5,          # Set pitch, max 20.0 min -20.0
+                                            volume_gain_db=1.0,    # Set volume gain, max 16.0 min -96.0
+                                            sample_rate_hertz= 8000 # Set sample rate, 48000, 24000, 16000, 8000
+                                            )
     response = client.synthesize_speech(input=synthesis_input, voice=voice, audio_config=audio_config)
 
     # Generate a unique filename incorporating a timestamp
@@ -482,3 +487,4 @@ def wrapSoftloud(wtext):
     wtext = re.sub(r'\((.*?)\)', r'<prosody volume="soft">(\1)</prosody>', wtext, flags=re.IGNORECASE)
     print(f'loudSoft: {wtext}')
     return wtext
+
