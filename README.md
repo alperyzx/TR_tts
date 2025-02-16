@@ -2,20 +2,20 @@
 Bu proje, Türkçe metinlerdeki gizli vurguları analiz ederek TTS'in (Text-to-Speech) daha doğal ve akıcı bir şekilde konuşmasını sağlar. Böylece dinleyiciyi monotonluktan kurtarır ve daha etkileyici bir deneyim sunar.
 
 📄**givenText.txt**
-TTS'e iletilecek metin
+ TTS'ye iletilecek metin burada belirlenir.
 
 🚀**text2speechLargeText.py**
-uygulama buradan run edilir.
+Uygulamanın ana çalışma dosyası, buradan çalıştırılır.
 
 🔍 **functions.py**
-vurgu için temel algoritmalar ve bir takım text mining.
+Metindeki vurguları belirleyen temel algoritmalar ve bazı text mining işlemleri burada bulunur.
 
 🎵**combine_mp3.py**
-TTS'ten dönen küçük parçaları birleştir. google TTS api 5000 karaktere kadar kabul ediyor. 
+Google TTS API, en fazla 5000 karakterlik metin kabul ettiğinden, dönen küçük ses parçalarını birleştirir.
 
 🎥**create_mp4.py**
-dilerseniz ses dosyasına bir resim ekleyerek videoya dönüştürün.
-
+ Ses dosyasını bir resimle birleştirerek videoya dönüştürür.
+ 
 🔗 örnek: https://www.youtube.com/playlist?list=PLf1m99shAJb3nJBRfDoBnAJOjKKZbnFwo
 
 youtube kanalıma abone olmayı unutmayın, teşekkürler 😊
