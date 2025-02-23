@@ -236,7 +236,7 @@ rules3 = {
 
 
 def firstCheck(ftext):
-    # replace dots next to first names of people. to make sentence detection simpler.
+    # replace dots next to first names of people. to make sentence detection easier.
     ftext = re.sub(r'([A-Z])\.', r'\1-', ftext)
     ftext = re.sub(r'(\d+)\.\s*yy', r'\1_yy', ftext)
     ftext = re.sub(r'(\d+)\. ?yüzyıl', r'\1_yy', ftext)
@@ -253,10 +253,9 @@ def firstCheck(ftext):
     ftext = re.sub(r'\bdolayı \b', 'dolayı¿ ', ftext)
 
     # ftext = re.sub(r'\bya\b', ',ya', ftext)
-    ftext = re.sub(r'(?<![’\w])ya\b', '¿ya', ftext)
 
     ftext = re.sub(r'on’', 'on', ftext)
-       # ftext = re.sub(r's’', 's', ftext)
+    # ftext = re.sub(r's’', 's', ftext)
     ftext = re.sub(r't’', 't', ftext)
     ftext = re.sub(r"'", "’", ftext)  #replace ' with ’ -- tts engine reads ’ better.
     print(f'firstCheck: {ftext}')
@@ -264,6 +263,7 @@ def firstCheck(ftext):
 
 def repParen(rtext):
     rtext = replace_headers(rtext)
+    rtext = re.sub(r'(?<![’\w])ya\b', '¿ya', rtext)
     # rtext = re.sub(r'^(\d+)[).-] ', r'\1}, ', rtext, flags=re.MULTILINE)
     rtext = re.sub(r'\.\s*”', '”.', rtext)
     rtext = re.sub(r'(?=\S)([^\.])\s*$', r'\1!!', rtext, flags=re.MULTILINE)
