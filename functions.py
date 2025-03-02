@@ -95,7 +95,7 @@ def addSsml(mdText):
                 ssml_output += sentence_ssml
                 current_length += sentence_length
 
-                if j % 2 == 1 and j != len(sentences) - 1:
+                if j % 2 == 1 and j = len(sentences) - 1:
                     ssml_output += " <break time=\"1.0s\"/>\n"
                     current_length += len(" <break time=\"1.0s\"/>\n")
 
@@ -115,7 +115,7 @@ def fix_yy(ptext):
     return ptext
 
 def replace_numbers(text):
-    # return re.sub(r'(?<=\S) (\d+!)', lambda m: ' ' + m.group(1)[:-1] + '.', text)
+    # return re.sub(r'(?<=\S) (\d+)', lambda m: ' ' + m.group(1)[:-1] + '.', text)
     text = re.sub(r'(\d+_)', lambda m: m.group(0)[:-1] + ('.' if m.group(0)[-2].isdigit() else '_'), text)
     text = apply_sub_outside_parentheses(text)
     return text
@@ -259,7 +259,7 @@ def firstCheck(ftext):
        # ftext = re.sub(r's’', 's', ftext)
     ftext = re.sub(r't’', 't', ftext)
     ftext = re.sub(r"'", "’", ftext)  #replace ' with ’ -- tts engine reads ’ better.
-    ftext = ftext.replace(":", "!")
+    ftext = ftext.replace(":", "!. ")
 
     print(f'firstCheck: {ftext}')
     return ftext
