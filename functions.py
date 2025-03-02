@@ -57,8 +57,9 @@ def replace_roman_numerals(text):
 
 def addSsml(mdText):
     mdText = re.sub(r'¿',r',', mdText)
-    mdText = re.sub(r'\.(?=\n[^$])', '. ', mdText)  # Split text into paragraphs
-    paragraphs = mdText.split("\n\n")
+    mdText = re.sub(r'\.(?=\n[^$])', '. ', mdText)
+    # Split text into paragraphs
+    paragraphs = mdText.split("\n\n\n")
 
     for i, paragraph in enumerate(paragraphs):
         # Skip if paragraph is an empty string
@@ -67,7 +68,7 @@ def addSsml(mdText):
 
         # Split paragraph into sentences
         sentences = paragraph.split(". ")
-        ssml_output = "<speak><p>\n <break time=\"1s\"/>\n"
+        ssml_output = "<speak><p>\n <break time=\"1.5s\"/>\n"
         current_length = len(ssml_output)
 
         for j, sentence in enumerate(sentences):
@@ -107,6 +108,7 @@ def addSsml(mdText):
         text2speech(ssml_output)
 
     return ssml_output
+
 
 def fix_yy(ptext):
     ptext= re.sub(r'_yy', '. yüzyıl', ptext)
@@ -223,7 +225,7 @@ rules3 = {
     "daha": {"stripMark": True, "range": (3, 2)},
     "göre": {"stripMark": True, "range": (1, 2)},
     "değil": {"stripMark": True, "range": (1, 1)},
-    "hangi": {"stripMark": True, "range": (1, 2)},
+    "hangi": {"stripMark": True, "range": (2, 2)},
     "yani": {"stripMark": True, "range": (1, 1)},
     "kadar": {"stripMark": True, "range": (2, 3)},
     "bilakis": {"stripMark": True, "range": (1, 1)},
@@ -236,7 +238,7 @@ rules3 = {
 
 
 def firstCheck(ftext):
-    # replace dots next to first names of people. to make sentence detection easier.
+    # replace dots next to first names of people. to make sentence detection simpler.
     ftext = re.sub(r'([A-Z])\.', r'\1-', ftext)
     ftext = re.sub(r'(\d+)\.\s*yy', r'\1_yy', ftext)
     ftext = re.sub(r'(\d+)\. ?yüzyıl', r'\1_yy', ftext)
@@ -252,12 +254,13 @@ def firstCheck(ftext):
     ftext = re.sub(r'\b veya\b', ' ¿veya', ftext)
     ftext = re.sub(r'\bdolayı \b', 'dolayı¿ ', ftext)
 
-    # ftext = re.sub(r'\bya\b', ',ya', ftext)
 
     ftext = re.sub(r'on’', 'on', ftext)
-    # ftext = re.sub(r's’', 's', ftext)
+       # ftext = re.sub(r's’', 's', ftext)
     ftext = re.sub(r't’', 't', ftext)
     ftext = re.sub(r"'", "’", ftext)  #replace ' with ’ -- tts engine reads ’ better.
+    ftext = ftext.replace(":", "!")
+
     print(f'firstCheck: {ftext}')
     return ftext
 
@@ -267,7 +270,6 @@ def repParen(rtext):
     # rtext = re.sub(r'^(\d+)[).-] ', r'\1}, ', rtext, flags=re.MULTILINE)
     rtext = re.sub(r'\.\s*”', '”.', rtext)
     rtext = re.sub(r'(?=\S)([^\.])\s*$', r'\1!!', rtext, flags=re.MULTILINE)
-    rtext = rtext.replace(":", "!:.")
     rtext = re.sub(r'\bmö\b\.?|\bm\.ö\.|\bmö\s\.?', 'milattan önce ', rtext)
     rtext = re.sub(r'\biö\b\.?', 'isadan önce ', rtext)
     rtext = re.sub(r'\bms\b\.?|\bms\s\.?|\bm\.s\.', 'milattan sonra ', rtext)
@@ -410,7 +412,7 @@ def repWords(mtext):
     mtext = re.sub(r'\bdahi \b', 'dahi¿ ', mtext)
     mtext = re.sub(r'\b daha\b', ' ¿daha', mtext)
     mtext = re.sub(r'\bilaveten \b', 'ilaveten¿ ', mtext)
-    #mtext = re.sub(r'\bolarak \b', 'olarak¿ ', mtext)
+    # mtext = re.sub(r'\bolarak \b', 'olarak¿ ', mtext)
     mtext = re.sub(r'\bsebebiyle \b', 'sebebiyle¿ ', mtext)
     mtext = re.sub(r'\byahut\b', '¿yahut', mtext)
     mtext = re.sub(r'\bhangi\b', '¿hangi', mtext)
@@ -438,7 +440,7 @@ def repWords(mtext):
 
     mtext = re.sub(r'(?<=\s)ki \b', 'ki¿ ', mtext)
 
-    mtext = re.sub(r'¿ya da,', '¿ya da', mtext)
+    mtext = re.sub(r' ¿ya da,', ' ¿ya da', mtext)
     mtext = re.sub(r'o zaman ', '¿o zaman ', mtext)
     mtext = re.sub(r'\bama\b', '¿ama', mtext)
 
@@ -487,4 +489,3 @@ def wrapSoftloud(wtext):
     wtext = re.sub(r'\((.*?)\)', r'<prosody volume="soft">(\1)</prosody>', wtext, flags=re.IGNORECASE)
     print(f'loudSoft: {wtext}')
     return wtext
-
