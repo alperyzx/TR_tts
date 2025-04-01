@@ -1,12 +1,17 @@
 import os
 from moviepy import ImageClip, AudioFileClip
+import configparser
 
-# Set the working directory
-os.chdir(r'D:\books\ders')
+# Read variables from the configuration file
+config = configparser.ConfigParser()
+config.read('variables.cfg', encoding='utf-8')
 
-# set Paths
-image_path = 'p9.jpg'
-audio_path = 'Sosyoloji Tarihi 2_Your Title.mp3'
+# Set the working directory from the configuration file
+os.chdir(config['DEFAULT']['workdir'])
+
+# Set paths from configuration file
+image_path = config['DEFAULT']['video_image_path']
+audio_path = config['DEFAULT']['video_audio_path']
 output_path = os.path.splitext(audio_path)[0] + '.mp4'
 
 # Check if files exist
@@ -40,3 +45,4 @@ video_clip.write_videofile(
     preset="fast",  # Adjust for balance between quality and speed
     ffmpeg_params=["-crf", "18", "-qscale", "0"]  # CRF for high-quality output
 )
+print(f"MP4 file created: {output_path}")

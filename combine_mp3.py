@@ -2,8 +2,9 @@ import os
 from pydub import AudioSegment
 from mutagen.easyid3 import EasyID3
 from mutagen.id3 import ID3, TIT2, TALB, TPE1, TPE2, TXXX
+import configparser
 
-def combine_mp3_files(directory, output_file, title, artist, album):
+def combine_mp3_files(directory, output_file, title, artist, album, album_artist, creator):
     # Get a list of all MP3 files in the directory
     mp3_files = [file for file in os.listdir(directory) if file.endswith(".mp3")]
 
@@ -23,6 +24,7 @@ def combine_mp3_files(directory, output_file, title, artist, album):
 
     # Export the combined AudioSegment as an MP3 file
     combined.export(output_file, format="mp3")
+    print(f"Combined MP3 file created: {output_file}")
 
     # Set ID3 tags for the combined file
     audio_file = EasyID3(output_file)
@@ -40,18 +42,17 @@ def combine_mp3_files(directory, output_file, title, artist, album):
     print("MP3 files combined and tagged successfully!")
 
 if __name__ == "__main__":
-    # Input directory containing MP3 files
-    input_directory = "d:/books/ders/output"
+    config = configparser.ConfigParser()
+    config.read('variables.cfg', encoding='utf-8')
 
-    album_artist = "AUZEF"
-    creator = "alperyz"
-    album = "AUZEF"
-    title = "Sesli Kitap"
+    input_directory = config['DEFAULT']['tts_output_dir']
+    album_artist = config['DEFAULT']['album_artist']
+    creator = config['DEFAULT']['creator']
+    album = config['DEFAULT']['album']
+    title = config['DEFAULT']['title']
+    artist = config['DEFAULT']['artist']
+    workdir = config['DEFAULT']['workdir']
+    output_file = os.path.join(workdir, f"{artist}_{title}.mp3")
 
-    # Define the tags
-    artist = "Yeni Çağ Felsefesi bölüm 9"
-
-    # Output file name with path
-    output_file = f"d:/books/ders/{artist}_{title}.mp3"
-    # Combine MP3 files in the input directory and set tags
-    combine_mp3_files(input_directory, output_file, title, artist, album)
+    combine_mp3_files(input_directory, output_file, title, artist, album, album_artist, creator)
+    print(f"Output MP3 file: {output_file}")

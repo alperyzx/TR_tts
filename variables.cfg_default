@@ -1,0 +1,22 @@
+# set your own variables here and rename this file to variables.cfg
+[DEFAULT]
+workdir = d:/Projects/TR_tts
+tts_output_dir = ${workdir}/output
+#mp3 parameters
+album_artist = unknown
+creator = your_name
+album = unknown
+title = title of the audio
+artist = unknown
+#mp4 parameters
+video_image_path = unnamed.jpg
+video_audio_path = audio.mp3
+
+#Choose your style at https://console.cloud.google.com/speech/text-to-speech
+[TTS]
+language_code = tr-TR  # tr-TR, en-US, en-GB, de-DE, fr-FR, it-IT, es-ES, pt-BR, ja-JP, ko-KR
+voice_name = tr-TR-Standard-E  # tr-TR-Standard-A, tr-TR-Standard-B, tr-TR-Standard-C, tr-TR-Standard-D, tr-TR-Standard-E
+speaking_rate = 1.00 # 0.25 to 4.0
+pitch = 0.0 # -20.0 to 20.0
+volume_gain_db = 0.0 # -96.0 to 16.0
+sample_rate_hertz = 24000   # 24000 or 48000

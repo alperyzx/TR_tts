@@ -2,23 +2,40 @@
 import re
 import time
 import string
+import os
 from google.cloud import texttospeech
+import configparser
+
+# Updated configuration parser to use ExtendedInterpolation.
+config = configparser.ConfigParser(interpolation=configparser.ExtendedInterpolation())
+config.read('variables.cfg')
 
 # Define the output directory as a global variable (outside the function)
-output_dir = "d:/books/ders/output"
+output_dir = config['DEFAULT']['tts_output_dir']
 
-def text2speech(text, language_code="tr-TR", voice_name="tr-TR-Standard-E"):
+# Ensure the output directory exists
+if not os.path.exists(output_dir):
+    os.makedirs(output_dir)
+
+# Read TTS parameters from the configuration file
+language_code = config['TTS']['language_code']
+voice_name = config['TTS']['voice_name']
+speaking_rate = float(config['TTS']['speaking_rate'])
+pitch = float(config['TTS']['pitch'])
+volume_gain_db = float(config['TTS']['volume_gain_db'])
+sample_rate_hertz = int(config['TTS']['sample_rate_hertz'])
+
+def text2speech(text):
     # print (f'ssml input: {text}')
     # Create a TextToSpeech client (assuming it's not already created elsewhere)
     client = texttospeech.TextToSpeechClient()
     synthesis_input = texttospeech.SynthesisInput(ssml=text)
     voice = texttospeech.VoiceSelectionParams(language_code=language_code, name=voice_name)
     audio_config = texttospeech.AudioConfig(audio_encoding=texttospeech.AudioEncoding.MP3,
-                                            speaking_rate=1.07,  # Set speaking rate, max 4.0 min 0.25
-                                            pitch=-2.8,          # Set pitch, max 20.0 min -20.0
-                                            volume_gain_db=0.0,    # Set volume gain, max 16.0 min -96.0
-                                            sample_rate_hertz= 24000 # Set sample rate, 48000, 24000, 16000, 8000
-                                            )
+                                            speaking_rate=speaking_rate,
+                                            pitch=pitch,
+                                            volume_gain_db=volume_gain_db,
+                                            sample_rate_hertz=sample_rate_hertz)
     response = client.synthesize_speech(input=synthesis_input, voice=voice, audio_config=audio_config)
 
     # Generate a unique filename incorporating a timestamp

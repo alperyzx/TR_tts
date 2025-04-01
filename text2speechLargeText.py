@@ -7,10 +7,8 @@ from google.cloud import texttospeech
 with open("givenText.txt", "r", encoding="utf-8") as file:
     givenText = file.read()
 
-
-#roman2numeral = functions.replace_roman_numerals(givenText)
-#pfirstCheck = functions.firstCheck(roman2numeral)
-
+#replace_roman_numerals = functions.replace_roman_numerals(givenText)
+#pfirstCheck = functions.firstCheck(replace_roman_numerals)
 
 pfirstCheck = functions.firstCheck(givenText)
 prepParen = functions.repParen(pfirstCheck.lower())
