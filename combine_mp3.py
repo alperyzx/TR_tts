@@ -6,6 +6,11 @@ from mutagen.id3 import ID3, TIT2, TALB, TPE1, TPE2, TXXX
 def combine_mp3_files(directory, output_file, title, artist, album):
     # Get a list of all MP3 files in the directory
     mp3_files = [file for file in os.listdir(directory) if file.endswith(".mp3")]
+
+    if not mp3_files:
+        print("No MP3 files found in the directory.")
+        return
+
     mp3_files.sort()  # Sort the list of MP3 files
 
     # Initialize an empty AudioSegment
@@ -32,21 +37,21 @@ def combine_mp3_files(directory, output_file, title, artist, album):
     id3.add(TXXX(encoding=3, desc='creator', text=creator))
     id3.save()
 
+    print("MP3 files combined and tagged successfully!")
+
 if __name__ == "__main__":
     # Input directory containing MP3 files
     input_directory = "d:/books/ders/output"
-    album_artist = "Your Category"
-    creator = "Your Nickname"
-    album = "Your Album"
-    title = "Your Title"
+
+    album_artist = "AUZEF"
+    creator = "alperyz"
+    album = "AUZEF"
+    title = "Sesli Kitap"
 
     # Define the tags
-    #artist = "Sosyoloji Tarihi 2"
-
+    artist = "Yeni Çağ Felsefesi bölüm 9"
 
     # Output file name with path
     output_file = f"d:/books/ders/{artist}_{title}.mp3"
     # Combine MP3 files in the input directory and set tags
     combine_mp3_files(input_directory, output_file, title, artist, album)
-    print("MP3 files combined and tagged successfully!")
-

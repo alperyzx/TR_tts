@@ -14,10 +14,10 @@ def text2speech(text, language_code="tr-TR", voice_name="tr-TR-Standard-E"):
     synthesis_input = texttospeech.SynthesisInput(ssml=text)
     voice = texttospeech.VoiceSelectionParams(language_code=language_code, name=voice_name)
     audio_config = texttospeech.AudioConfig(audio_encoding=texttospeech.AudioEncoding.MP3,
-                                            speaking_rate=1.0,  # Set speaking rate, max 4.0 min 0.25
-                                            pitch=+8.5,          # Set pitch, max 20.0 min -20.0
-                                            volume_gain_db=1.0,    # Set volume gain, max 16.0 min -96.0
-                                            sample_rate_hertz= 8000 # Set sample rate, 48000, 24000, 16000, 8000
+                                            speaking_rate=1.07,  # Set speaking rate, max 4.0 min 0.25
+                                            pitch=-2.8,          # Set pitch, max 20.0 min -20.0
+                                            volume_gain_db=0.0,    # Set volume gain, max 16.0 min -96.0
+                                            sample_rate_hertz= 24000 # Set sample rate, 48000, 24000, 16000, 8000
                                             )
     response = client.synthesize_speech(input=synthesis_input, voice=voice, audio_config=audio_config)
 
@@ -95,7 +95,7 @@ def addSsml(mdText):
                 ssml_output += sentence_ssml
                 current_length += sentence_length
 
-                if j % 2 == 1 and j = len(sentences) - 1:
+                if j % 2 == 1 and j != len(sentences) - 1:
                     ssml_output += " <break time=\"1.0s\"/>\n"
                     current_length += len(" <break time=\"1.0s\"/>\n")
 
@@ -115,7 +115,6 @@ def fix_yy(ptext):
     return ptext
 
 def replace_numbers(text):
-    # return re.sub(r'(?<=\S) (\d+)', lambda m: ' ' + m.group(1)[:-1] + '.', text)
     text = re.sub(r'(\d+_)', lambda m: m.group(0)[:-1] + ('.' if m.group(0)[-2].isdigit() else '_'), text)
     text = apply_sub_outside_parentheses(text)
     return text
@@ -259,7 +258,7 @@ def firstCheck(ftext):
        # ftext = re.sub(r's’', 's', ftext)
     ftext = re.sub(r't’', 't', ftext)
     ftext = re.sub(r"'", "’", ftext)  #replace ' with ’ -- tts engine reads ’ better.
-    ftext = ftext.replace(":", "!. ")
+    ftext = ftext.replace(":", "!.")
 
     print(f'firstCheck: {ftext}')
     return ftext

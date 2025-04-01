@@ -4,10 +4,19 @@ from moviepy import ImageClip, AudioFileClip
 # Set the working directory
 os.chdir(r'D:\books\ders')
 
-# File paths
-image_path = 'p1.jpg'
-audio_path = 'Yeni Çağ Felsefesi.mp3'
-output_path = 'Yeni Çağ Felsefesi.mp4'
+# set Paths
+image_path = 'p9.jpg'
+audio_path = 'Sosyoloji Tarihi 2_Your Title.mp3'
+output_path = os.path.splitext(audio_path)[0] + '.mp4'
+
+# Check if files exist
+if not os.path.exists(image_path):
+    print(f"Error: Image file '{image_path}' not found.")
+    exit(1)
+
+if not os.path.exists(audio_path):
+    print(f"Error: Audio file '{audio_path}' not found.")
+    exit(1)
 
 # Load the image and audio
 image_clip = ImageClip(image_path)
