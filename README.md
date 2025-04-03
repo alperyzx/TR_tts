@@ -21,8 +21,9 @@ Google TTS API, en fazla 5000 karakterlik metin kabul ettiğinden, dönen küç�
 youtube kanalıma abone olmayı unutmayın, teşekkürler 😊
 
 # Gereksinimler
-<p> <li> pycharm (preferred ide)<br>
-<li> python3.13 (additional packages: google-cloud-texttospeech, pydub, mutagen, audioop-lts, moviepy) <br>
-<li> ffmpeg (https://github.com/BtbN/FFmpeg-Builds/releases) & add path to system environment <br>
-<li> GoogleCloudPlatform https://github.com/GoogleCloudPlatform/python-docs-samples/tree/main/texttospeech/snippets <br>
-<li> GoogleCloudPlatform auth: https://cloud.google.com/docs/authentication/application-default-credentials </p> 
+<p> <li> python3.13+ (additional packages: pip install -r requirements.txt) <br>
+<li> ffmpeg (download latest release: https://github.com/BtbN/FFmpeg-Builds/releases, extract it anywhere and add it's path to system environment <br>
+<p> GoogleCloudPlatform Install & Auth: https://cloud.google.com/docs/authentication/application-default-credentials<br> </p>
+
+# Detaylar
+<p><li> GoogleCloudPlatform texttospeech https://github.com/GoogleCloudPlatform/python-docs-samples/tree/main/texttospeech/snippets  </p>
