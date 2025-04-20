@@ -1,0 +1,558 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Text to Speech Tool</title>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.2.3/dist/css/bootstrap.min.css">
+    <style>
+        body {
+            padding-top: 2rem;
+            background-color: #f8f9fa;
+        }
+        .card {
+            margin-bottom: 1.5rem;
+            box-shadow: 0 0.5rem 1rem rgba(0, 0, 0, 0.1);
+        }
+        .file-item {
+            padding: 10px;
+            margin: 5px 0;
+            border-radius: 4px;
+            background-color: #f1f8ff;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .file-item.selected {
+            background-color: #d1e7ff;
+        }
+        .audio-player {
+            width: 100%;
+        }
+        /* New: force equal length for combined audio players */
+        #combined-file-list .audio-player {
+            width: 300px;
+        }
+        #loading {
+            display: none;
+        }
+        #image-list {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+        }
+        .thumbnail {
+            position: relative;
+            display: inline-block;
+            cursor: pointer;
+        }
+        .thumbnail input[type="radio"] {
+            position: absolute;
+            top: 5px;
+            left: 5px;
+            z-index: 2;
+        }
+        .thumbnail img {
+            border: 2px solid transparent;
+            transition: border-color 0.3s;
+            width: 150px;
+            height: 150px;
+            object-fit: cover;
+        }
+        .thumbnail:hover img {
+            border-color: #007bff;
+        }
+        /* New CSS to center status-message in front of everything */
+        #status-message {
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            z-index: 9999;
+        }
+    </style>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/Sortable/1.14.0/Sortable.min.js"></script> <!-- Added Sortable.js -->
+</head>
+<body>
+    <div class="container">
+        <h1 class="mb-4 text-center">Text to Speech Tool</h1>
+
+        <div class="row">
+            <!-- Text Input Section -->
+            <div class="col-md-6">
+                <!-- Modified Input Text Card -->
+                <div class="card">
+                    <div class="card-header d-flex justify-content-between align-items-center">
+                        <h5 class="m-0">
+                            <a data-bs-toggle="collapse" href="#input-text-collapse" role="button" aria-expanded="true" aria-controls="input-text-collapse" class="text-decoration-none text-dark">
+                                Input Text
+                            </a>
+                        </h5>
+                        <div>
+                            <button type="submit" form="text-form" class="btn btn-primary">Process Text</button>
+                            <div id="loading" class="spinner-border spinner-border-sm text-primary ms-2" role="status">
+                                <span class="visually-hidden">Loading...</span>
+                            </div>
+                        </div>
+                    </div>
+                    <div id="input-text-collapse" class="collapse show">
+                        <div class="card-body">
+                            <form id="text-form">
+                                <div class="mb-3">
+                                    <textarea class="form-control" id="text-input" rows="5" placeholder="Enter text to convert to speech"></textarea>
+                                    <small class="form-text text-muted">
+                                        Warning: If you enter text above, any uploaded file will be ignored.
+                                    </small>
+                                </div>
+                                <div class="mb-3" id="file-upload-container">
+                                    <div class="input-group">
+                                        <input class="form-control" type="file" id="file-input" accept=".txt">
+                                        <button class="btn btn-secondary" type="button" id="clear-file-btn">Clear</button>
+                                    </div>
+                                </div>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+                <!-- New Combined Files Card -->
+                <div class="card mt-4">
+                    <div class="card-header d-flex justify-content-between align-items-center">
+                        <h5 class="m-0">Combined Audio Files</h5>
+                        <div>
+                            <button id="refresh-combined-btn" class="btn btn-sm btn-outline-secondary">Refresh</button>
+                        </div>
+                    </div>
+                    <div class="card-body">
+                        <div id="combined-file-list" class="mb-3">
+                            <p>No combined files available</p>
+                        </div>
+                    </div>
+                </div>
+                <!-- New Card: Select Image for Video -->
+                <div class="card mt-4">
+                    <div class="card-header">
+                        <h5>Select Image for Video</h5>
+                    </div>
+                    <div class="card-body">
+                        <div id="image-list" class="mb-3">
+                            <p>No images available</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- File List Section -->
+            <div class="col-md-6">
+                <div class="card">
+                    <div class="card-header d-flex justify-content-between align-items-center">
+                        <h5 class="m-0">
+                            <a data-bs-toggle="collapse" href="#generated-audio-collapse" role="button" aria-expanded="true" aria-controls="generated-audio-collapse" class="text-decoration-none text-dark">
+                                Generated Audio Files
+                            </a>
+                        </h5>
+                        <div>
+                            <button id="refresh-btn" class="btn btn-sm btn-outline-secondary">Refresh</button>
+                            <button id="combine-btn" class="btn btn-sm btn-success ms-2" disabled>Combine Selected Files</button>
+                            <label class="ms-2 mb-0 align-middle" for="select-all">
+                                <input type="checkbox" id="select-all" class="form-check-input d-inline-block align-middle"> Select All
+                            </label>
+                        </div>
+                    </div>
+                    <div id="generated-audio-collapse" class="collapse show">
+                        <div class="card-body">
+                            <!-- Removed "Combined File Name (basename)" label and wrapped input in a hidden container -->
+                            <div class="mb-3" id="combined-basename-container" style="display: none;">
+                                <input type="text" id="combined-basename" class="form-control" placeholder="Enter output file name (without extension)">
+                            </div>
+                            <div id="file-list" class="mb-3">
+                                <p>No files available</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <!-- New Card: Generated Videos -->
+                <div class="card mt-4">
+                    <div class="card-header d-flex justify-content-between align-items-center">
+                        <h5>Generated Videos</h5>
+                        <div>
+                            <div id="mp4-filename-container" style="display: none; width: 200px; display: inline-block;">
+                                <input type="text" id="mp4-filename" class="form-control form-control-sm" placeholder="MP4 filename (no ext)">
+                            </div>
+                            <button id="create-video-btn" class="btn btn-sm btn-primary ms-2">Create MP4</button>
+                        </div>
+                    </div>
+                    <div class="card-body">
+                        <div id="video-list" class="mb-3">
+                            <p>No videos available</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Messages and Status -->
+        <div class="mt-4">
+            <div class="alert alert-info d-none" id="status-message"></div>
+        </div>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            loadFiles(); // previously commented out
+            loadCombinedFiles();
+            loadImages();
+            loadVideos();
+
+            // Initialize sortable list for files
+            var fileList = document.getElementById('file-list');
+            Sortable.create(fileList, {
+                animation: 150
+            });
+
+            document.getElementById('text-form').addEventListener('submit', function(e) {
+                e.preventDefault();
+
+                const textInput = document.getElementById('text-input').value;
+                const fileInputEl = document.getElementById('file-input');
+                const fileInput = fileInputEl.files[0];
+
+                if (!textInput && !fileInput) {
+                    showMessage('Please enter text or upload a file', 'danger');
+                    return;
+                }
+
+                const formData = new FormData();
+
+                if (textInput) {
+                    formData.append('text', textInput);
+                } else {
+                    formData.append('file', fileInput);
+                }
+
+                document.getElementById('loading').style.display = 'inline-block';
+
+                fetch('/process_text', {
+                    method: 'POST',
+                    body: formData
+                })
+                .then(response => response.json())
+                .then(data => {
+                    showMessage(data.message, 'success');
+                    loadFiles(); // refresh 'Generated Audio Files' after successful process_text call
+                })
+                .catch(error => {
+                    showMessage('Error: ' + error, 'danger');
+                })
+                .finally(() => {
+                    document.getElementById('loading').style.display = 'none';
+                    // Clear file input automatically after process_text
+                    fileInputEl.value = '';
+                });
+            });
+
+            // Add event listener for clear file button
+            document.getElementById('clear-file-btn').addEventListener('click', function() {
+                document.getElementById('file-input').value = '';
+            });
+
+            document.getElementById('refresh-btn').addEventListener('click', loadFiles);
+            document.getElementById('refresh-combined-btn').addEventListener('click', loadCombinedFiles);
+            document.getElementById('create-video-btn').addEventListener('click', createVideo);
+
+            document.getElementById('combine-btn').addEventListener('click', combineFiles);
+
+            document.getElementById('select-all').addEventListener('change', function() {
+                let checkboxes = document.querySelectorAll('#file-list .file-item input[type="checkbox"]');
+                checkboxes.forEach(function(checkbox) {
+                    checkbox.checked = this.checked;
+                    let fileItem = checkbox.closest('.file-item');
+                    if(this.checked) {
+                        fileItem.classList.add('selected');
+                    } else {
+                        fileItem.classList.remove('selected');
+                    }
+                }, this);
+                let fileItems = Array.from(document.querySelectorAll('#file-list .file-item'));
+                const selectedCount = fileItems.filter(item => item.querySelector('input[type="checkbox"]').checked).length;
+                document.getElementById('combine-btn').disabled = selectedCount < 2;
+                document.getElementById('combined-basename-container').style.display = selectedCount >= 2 ? 'block' : 'none';
+            });
+        });
+
+        // New helper: update MP4 filename visibility based on selections
+        function updateMP4FieldVisibility() {
+            const combinedSelected = document.querySelector('input[name="combined_mp3"]:checked');
+            const imageSelected = document.querySelector('input[name="selected_image"]:checked');
+            document.getElementById('mp4-filename-container').style.display = (combinedSelected && imageSelected) ? 'inline-block' : 'none';
+        }
+
+        function loadFiles() {
+            fetch('/list_files')
+                .then(response => response.json())
+                .then(data => {
+                    const fileList = document.getElementById('file-list');
+                    fileList.innerHTML = ''; // clear existing items
+                    if (!data.files || data.files.length === 0) {
+                        fileList.innerHTML = '<p>No files available</p>';
+                    } else {
+                        data.files.forEach(file => {
+                            // Create file item for new file
+                            const fileItem = document.createElement('div');
+                            fileItem.className = 'file-item';
+                            fileItem.dataset.filename = file;
+
+                            const checkbox = document.createElement('input');
+                            checkbox.type = 'checkbox';
+                            checkbox.className = 'form-check-input me-2';
+                            checkbox.addEventListener('change', function() {
+                                updateSelection(this, fileItem);
+                            });
+                            fileItem.appendChild(checkbox);
+
+                            const fileInfo = document.createElement('div');
+                            fileInfo.innerHTML = `<strong>${file}</strong>`;
+                            fileItem.appendChild(fileInfo);
+
+                            const audio = document.createElement('audio');
+                            audio.className = 'audio-player ms-2';
+                            audio.controls = true;
+                            audio.src = `/audio/${file}`;
+                            fileItem.appendChild(audio);
+
+                            fileList.appendChild(fileItem);
+                        });
+                    }
+                })
+                .catch(error => {
+                    showMessage('Error loading files: ' + error, 'danger');
+                });
+        }
+
+        function loadCombinedFiles() {
+            fetch('/list_combined_files')
+                .then(response => response.json())
+                .then(data => {
+                    const combinedList = document.getElementById('combined-file-list');
+                    if (data.files && data.files.length > 0) {
+                        combinedList.innerHTML = '';
+                        data.files.forEach(file => {
+                            const fileItem = document.createElement('div');
+                            fileItem.className = 'file-item';
+                            fileItem.dataset.filename = file;
+
+                            const radio = document.createElement('input');
+                            radio.type = 'radio';
+                            radio.name = 'combined_mp3';
+                            radio.className = 'form-check-input me-2';
+                            radio.addEventListener('change', updateMP4FieldVisibility);
+                            fileItem.appendChild(radio);
+
+                            const fileInfo = document.createElement('div');
+                            fileInfo.innerHTML = `<strong>${file}</strong>`;
+                            fileItem.appendChild(fileInfo);
+
+                            const audio = document.createElement('audio');
+                            audio.className = 'audio-player ms-2';
+                            audio.controls = true;
+                            audio.src = `/combined_audio/${file}`;
+                            fileItem.appendChild(audio);
+
+                            // New: make entire file item clickable to select it
+                            fileItem.addEventListener('click', function(e) {
+                                if (e.target.tagName !== 'INPUT') {
+                                    document.querySelectorAll('#combined-file-list .file-item')
+                                        .forEach(item => item.classList.remove('selected'));
+                                    radio.checked = true;
+                                    fileItem.classList.add('selected');
+                                    updateMP4FieldVisibility();
+                                }
+                            });
+
+                            combinedList.appendChild(fileItem);
+                        });
+                    } else {
+                        combinedList.innerHTML = '<p>No combined files available</p>';
+                    }
+                })
+                .catch(error => {
+                    showMessage('Error loading combined files: ' + error, 'danger');
+                });
+        }
+
+        function loadImages() {
+            fetch('/list_images')
+                .then(response => response.json())
+                .then(data => {
+                    const imageList = document.getElementById('image-list');
+                    imageList.innerHTML = ''; // clear existing items
+                    if (data.images && data.images.length > 0) {
+                        data.images.forEach(file => {
+                            // Create thumbnail container
+                            const thumb = document.createElement('div');
+                            thumb.className = 'thumbnail';
+                            thumb.dataset.filename = file;
+
+                            // Create radio input
+                            const radio = document.createElement('input');
+                            radio.type = 'radio';
+                            radio.name = 'selected_image';
+                            radio.className = 'form-check-input';
+                            radio.addEventListener('change', updateMP4FieldVisibility);
+                            thumb.appendChild(radio);
+
+                            // Create image element with filename as tooltip
+                            const img = document.createElement('img');
+                            img.src = `/images/${file}`;
+                            img.title = file;
+                            thumb.appendChild(img);
+
+                            // New: select thumbnail when anywhere in the thumbnail is clicked
+                            thumb.addEventListener('click', function(e) {
+                                if (e.target.tagName !== 'INPUT') {
+                                    // Remove selected class from all thumbnails
+                                    document.querySelectorAll('#image-list .thumbnail').forEach(function(item){
+                                        item.classList.remove('selected');
+                                    });
+                                    radio.checked = true;
+                                    thumb.classList.add('selected');
+                                    updateMP4FieldVisibility();
+                                }
+                            });
+
+                            imageList.appendChild(thumb);
+                        });
+                    } else {
+                        imageList.innerHTML = '<p>No images available</p>';
+                    }
+                })
+                .catch(error => {
+                    showMessage('Error loading images: ' + error, 'danger');
+                });
+        }
+
+        function loadVideos() {
+            fetch('/list_videos')
+                .then(response => response.json())
+                .then(data => {
+                    const videoList = document.getElementById('video-list');
+                    if (data.videos && data.videos.length > 0) {
+                        videoList.innerHTML = '';
+                        data.videos.forEach(file => {
+                            const item = document.createElement('div');
+                            item.className = 'file-item';
+                            item.dataset.filename = file;
+
+                            const fileInfo = document.createElement('div');
+                            fileInfo.innerHTML = `<strong>${file}</strong>`;
+                            item.appendChild(fileInfo);
+
+                            const video = document.createElement('video');
+                            video.width = 200;
+                            video.controls = true;
+                            video.src = `/videos/${file}`;
+                            video.className = 'ms-2';
+                            item.appendChild(video);
+
+                            videoList.appendChild(item);
+                        });
+                    } else {
+                        videoList.innerHTML = '<p>No videos available</p>';
+                    }
+                })
+                .catch(error => {
+                    showMessage('Error loading videos: ' + error, 'danger');
+                });
+        }
+
+        function combineFiles() {
+            let sortedFiles = Array.from(document.querySelectorAll('#file-list .file-item'))
+                .filter(item => item.querySelector('input[type="checkbox"]').checked)
+                .map(item => item.dataset.filename);
+
+            if (sortedFiles.length < 2) {
+                showMessage('Please select at least two files to combine', 'warning');
+                return;
+            }
+            const combinedBasename = document.getElementById('combined-basename').value.trim();
+            if (!combinedBasename) {
+                showMessage('Please provide a basename for the combined file', 'warning');
+                return;
+            }
+
+            fetch('/combine', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({ sorted_files: sortedFiles, basename: combinedBasename })
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.status === 'success') {
+                    showMessage(data.message + ': ' + data.output_file, 'success');
+                    loadCombinedFiles();  // refresh Combined Audio Files
+                } else {
+                    showMessage(data.message, 'danger');
+                }
+            })
+            .catch(error => {
+                showMessage('Error: ' + error, 'danger');
+            });
+        }
+
+        function createVideo() {
+            const selectedMp3Radio = document.querySelector('input[name="combined_mp3"]:checked');
+            const selectedImageRadio = document.querySelector('input[name="selected_image"]:checked');
+            if (!selectedMp3Radio || !selectedImageRadio) {
+                showMessage('Please select one combined audio and one image', 'warning');
+                return;
+            }
+            const mp3_file = selectedMp3Radio.closest('.file-item').dataset.filename;
+            const image_file = selectedImageRadio.closest('.thumbnail').dataset.filename;
+            const videoBasename = document.getElementById('mp4-filename').value.trim();
+            if (!videoBasename) {
+                showMessage('Please provide a filename for the MP4 output', 'warning');
+                return;
+            }
+
+            fetch('/create_video', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ mp3_file, image_file, video_basename: videoBasename })
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.status === 'success') {
+                    showMessage(data.message, 'success');
+                    loadVideos();
+                } else {
+                    showMessage(data.message, 'danger');
+                }
+            })
+            .catch(error => {
+                showMessage('Error: ' + error, 'danger');
+            });
+        }
+
+        function showMessage(message, type) {
+            const messageEl = document.getElementById('status-message');
+            messageEl.textContent = message;
+            messageEl.className = `alert alert-${type}`;
+            messageEl.classList.remove('d-none');
+            setTimeout(() => {
+                messageEl.classList.add('d-none');
+            }, 5000);
+        }
+
+        function updateSelection(checkbox, fileItem) {
+            let fileItems = Array.from(document.querySelectorAll('#file-list .file-item'));
+            const selectedCount = fileItems.filter(item => item.querySelector('input[type="checkbox"]').checked).length;
+            document.getElementById('combine-btn').disabled = selectedCount < 2;
+            document.getElementById('combined-basename-container').style.display = selectedCount >= 2 ? 'block' : 'none';
+            checkbox.checked ? fileItem.classList.add('selected') : fileItem.classList.remove('selected');
+        }
+    </script>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.2.3/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>

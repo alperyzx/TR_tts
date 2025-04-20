@@ -2,47 +2,61 @@ import os
 from moviepy import ImageClip, AudioFileClip
 import configparser
 
-# Read variables from the configuration file
-config = configparser.ConfigParser()
-config.read('variables.cfg', encoding='utf-8')
+def create_video(image_path=None, audio_path=None, video_basename=None):
+    # Read variables from the configuration file if paths are not provided
+    config = configparser.ConfigParser()
+    config.read('variables.cfg', encoding='utf-8')
+    workdir = config['DEFAULT']['workdir']  # use workdir from config
 
-# Set the working directory from the configuration file
-os.chdir(config['DEFAULT']['workdir'])
+    if not image_path:
+        image_path = config['DEFAULT']['video_image_path']
+    if not audio_path:
+        # Use the relative video_audio_path which is under workdir
+        audio_path = config['DEFAULT']['video_audio_path']
 
-# Set paths from configuration file
-image_path = config['DEFAULT']['video_image_path']
-audio_path = config['DEFAULT']['video_audio_path']
-output_path = os.path.splitext(audio_path)[0] + '.mp4'
+    # Normalize paths to be under workdir if they are not absolute
+    if not os.path.isabs(image_path):
+        image_path = os.path.join(workdir, image_path)
+    if not os.path.isabs(audio_path):
+        audio_path = os.path.join(workdir, audio_path)
 
-# Check if files exist
-if not os.path.exists(image_path):
-    print(f"Error: Image file '{image_path}' not found.")
-    exit(1)
+    # Use the directory of audio_path and a proper base name to construct the output path
+    output_dir = os.path.dirname(audio_path)
+    if video_basename:
+        base_filename = video_basename
+    else:
+        base_filename = os.path.splitext(os.path.basename(audio_path))[0]
+    output_path = os.path.join(output_dir, base_filename + '.mp4')
 
-if not os.path.exists(audio_path):
-    print(f"Error: Audio file '{audio_path}' not found.")
-    exit(1)
+    # Check if files exist
+    if not os.path.exists(image_path):
+        raise FileNotFoundError(f"Image file '{image_path}' not found.")
+    if not os.path.exists(audio_path):
+        raise FileNotFoundError(f"Audio file '{audio_path}' not found.")
 
-# Load the image and audio
-image_clip = ImageClip(image_path)
-audio_clip = AudioFileClip(audio_path)
+    # Load the image and audio
+    image_clip = ImageClip(image_path)
+    audio_clip = AudioFileClip(audio_path)
 
-# Resize the image to fill the screen (e.g., 1920x1080 resolution)
-image_clip = image_clip.resized(new_size=(1920, 1080))
+    image_clip = image_clip.resized(new_size=(1920, 1080))
+    image_clip = image_clip.with_duration(audio_clip.duration)
+    video_clip = image_clip.with_audio(audio_clip)
 
-# Set the duration of the image clip to match the audio clip's duration
-image_clip = image_clip.with_duration(audio_clip.duration)
+    video_clip.write_videofile(
+        output_path,
+        codec="libx264",
+        fps=1,
+        bitrate="256k",
+        preset="fast",
+        ffmpeg_params=["-crf", "18", "-qscale", "0"]
+    )
+    # Clean up clips
+    video_clip.close()
+    audio_clip.close()
+    image_clip.close()
+    print(f"MP4 file created: {output_path}")
+    return output_path
 
-# Set the audio to the image
-video_clip = image_clip.with_audio(audio_clip)
+if __name__ == '__main__':
+    create_video()
 
-# Write the result to a file with high-quality settings
-video_clip.write_videofile(
-    output_path,
-    codec="libx264",
-    fps=1,  # Using 1 frame per second because we only have one static image
-    bitrate="256k",  # High bitrate to preserve quality
-    preset="fast",  # Adjust for balance between quality and speed
-    ffmpeg_params=["-crf", "18", "-qscale", "0"]  # CRF for high-quality output
-)
-print(f"MP4 file created: {output_path}")

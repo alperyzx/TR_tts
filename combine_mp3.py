@@ -41,6 +41,30 @@ def combine_mp3_files(directory, output_file, title, artist, album, album_artist
 
     print("MP3 files combined and tagged successfully!")
 
+def combine_mp3_files_manual(directory, selected_files, output_file, title, artist, album, album_artist, creator):
+    # Initialize an empty AudioSegment
+    combined = AudioSegment.empty()
+    for filename in selected_files:
+        path = os.path.join(directory, filename)
+        if os.path.exists(path):
+            audio = AudioSegment.from_mp3(path)
+            combined += audio
+        else:
+            print(f"Warning: {filename} not found in {directory}. Skipped.")
+    combined.export(output_file, format="mp3")
+    print(f"Combined MP3 file created manually: {output_file}")
+    # Set ID3 tags
+    audio_file = EasyID3(output_file)
+    audio_file['title'] = title
+    audio_file['artist'] = artist
+    audio_file['album'] = album
+    audio_file['albumartist'] = album_artist
+    audio_file.save()
+    id3 = ID3(output_file)
+    id3.add(TXXX(encoding=3, desc='creator', text=creator))
+    id3.save()
+    print("MP3 files combined manually and tagged successfully!")
+
 if __name__ == "__main__":
     config = configparser.ConfigParser()
     config.read('variables.cfg', encoding='utf-8')
@@ -56,3 +80,4 @@ if __name__ == "__main__":
 
     combine_mp3_files(input_directory, output_file, title, artist, album, album_artist, creator)
     print(f"Output MP3 file: {output_file}")
+
