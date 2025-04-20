@@ -76,6 +76,85 @@
             transform: translate(-50%, -50%);
             z-index: 9999;
         }
+
+        textarea.form-control {
+            color: #000;
+        }
+
+        /* Night Mode: align with user's system preference */
+        @media (prefers-color-scheme: dark) {
+            body {
+                background-color: #121212;
+                color: #e0e0e0;
+            }
+            .card {
+                background-color: #1e1e1e;
+                color: #e0e0e0;
+                box-shadow: none;
+            }
+            .file-item {
+                background-color: #1e1e1e;
+                border: 1px solid #333;
+            }
+            .thumbnail img {
+                border-color: #555;
+            }
+            .alert {
+                background-color: #333;
+                color: #e0e0e0;
+            }
+            .card-header a {
+                color: #e0e0e0 !important;
+            }
+            /* Added rule for better contrast of filenames in night mode */
+            #combined-file-list .file-item div,
+            #file-list .file-item div {
+                color: #e0e0e0;
+            }
+            /* Improved contrast for selected file items in night mode */
+            #combined-file-list .file-item.selected,
+            #file-list .file-item.selected {
+                background-color: #444;
+                color: #ffffff;
+            }
+            /* Make textarea darker in night mode */
+            textarea.form-control {
+                background-color: #333;
+                color: #e0e0e0;
+                border-color: #555;
+            }
+            /* Enforce dark background on focus for textarea */
+            textarea.form-control:focus {
+                background-color: #333;
+                color: #e0e0e0;
+                border-color: #555;
+                box-shadow: none;
+            }
+            /* Fix file-upload-container in dark mode */
+            #file-upload-container {
+                background-color: #1e1e1e;
+                padding: 0.5rem;
+                border-radius: 0.25rem;
+            }
+            /* Added dark mode override for file input */
+            #file-upload-container input[type="file"] {
+                background-color: #333;
+                color: #e0e0e0;
+                border: 1px solid #555;
+            }
+            /* New: dark mode rules for combined-basename input field */
+            #combined-basename {
+                background-color: #333;
+                color: #e0e0e0;
+                border-color: #555;
+            }
+            /* New: dark mode style for MP4 filename input field */
+            #mp4-filename {
+                background-color: #333;
+                color: #e0e0e0;
+                border-color: #555;
+            }
+        }
     </style>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/Sortable/1.14.0/Sortable.min.js"></script> <!-- Added Sortable.js -->
 </head>
@@ -181,7 +260,7 @@
                     <div class="card-header d-flex justify-content-between align-items-center">
                         <h5>Generated Videos</h5>
                         <div>
-                            <div id="mp4-filename-container" style="display: none; width: 200px; display: inline-block;">
+                            <div id="mp4-filename-container" style="display: none; width: 200px;">
                                 <input type="text" id="mp4-filename" class="form-control form-control-sm" placeholder="MP4 filename (no ext)">
                             </div>
                             <button id="create-video-btn" class="btn btn-sm btn-primary ms-2">Create MP4</button>
@@ -261,6 +340,13 @@
                 document.getElementById('file-input').value = '';
             });
 
+            // New: click anywhere in file-upload-container to trigger file input
+            document.getElementById('file-upload-container').addEventListener('click', function(e) {
+                if(e.target.id !== 'clear-file-btn' && e.target.id !== 'file-input') {
+                    document.getElementById('file-input').click();
+                }
+            });
+
             document.getElementById('refresh-btn').addEventListener('click', loadFiles);
             document.getElementById('refresh-combined-btn').addEventListener('click', loadCombinedFiles);
             document.getElementById('create-video-btn').addEventListener('click', createVideo);
@@ -302,7 +388,6 @@
                         fileList.innerHTML = '<p>No files available</p>';
                     } else {
                         data.files.forEach(file => {
-                            // Create file item for new file
                             const fileItem = document.createElement('div');
                             fileItem.className = 'file-item';
                             fileItem.dataset.filename = file;
@@ -314,6 +399,14 @@
                                 updateSelection(this, fileItem);
                             });
                             fileItem.appendChild(checkbox);
+
+                            // New: toggle selection when line is clicked (avoid checkbox, audio, etc.)
+                            fileItem.addEventListener('click', function(e) {
+                                if (['INPUT', 'AUDIO', 'BUTTON'].indexOf(e.target.tagName) === -1) {
+                                    checkbox.checked = !checkbox.checked;
+                                    updateSelection(checkbox, fileItem);
+                                }
+                            });
 
                             const fileInfo = document.createElement('div');
                             fileInfo.innerHTML = `<strong>${file}</strong>`;
