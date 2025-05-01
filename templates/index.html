@@ -159,6 +159,19 @@
                 color: #e0e0e0;
                 border-color: #555;
             }
+            /* Add a small label for file type */
+            .file-type-badge {
+                font-size: 0.7rem;
+                padding: 2px 5px;
+                border-radius: 3px;
+                margin-left: 5px;
+                background-color: #e9ecef;
+                color: #495057;
+            }
+            .file-type-badge {
+                background-color: #333;
+                color: #adb5bd;
+            }
         }
     </style>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/Sortable/1.14.0/Sortable.min.js"></script> <!-- Added Sortable.js -->
@@ -414,7 +427,8 @@
                             });
 
                             const fileInfo = document.createElement('div');
-                            fileInfo.innerHTML = `<strong>${file}</strong>`;
+                            const fileExt = file.split('.').pop().toLowerCase();
+                            fileInfo.innerHTML = `<strong>${file}</strong> <span class="file-type-badge">${fileExt}</span>`;
                             fileItem.appendChild(fileInfo);
 
                             const audio = document.createElement('audio');
@@ -451,8 +465,10 @@
                             radio.addEventListener('change', updateMP4FieldVisibility);
                             fileItem.appendChild(radio);
 
+                            // Display filename with file type badge
                             const fileInfo = document.createElement('div');
-                            fileInfo.innerHTML = `<strong>${file}</strong>`;
+                            const fileExt = file.split('.').pop().toLowerCase();
+                            fileInfo.innerHTML = `<strong>${file}</strong> <span class="file-type-badge">${fileExt}</span>`;
                             fileItem.appendChild(fileInfo);
 
                             const audio = document.createElement('audio');
@@ -605,13 +621,13 @@
         }
 
         function createVideo() {
-            const selectedMp3Radio = document.querySelector('input[name="combined_mp3"]:checked');
+            const selectedAudioRadio = document.querySelector('input[name="combined_mp3"]:checked');
             const selectedImageRadio = document.querySelector('input[name="selected_image"]:checked');
-            if (!selectedMp3Radio || !selectedImageRadio) {
-                showMessage('Please select one combined audio and one image', 'warning');
+            if (!selectedAudioRadio || !selectedImageRadio) {
+                showMessage('Please select one audio file and one image', 'warning');
                 return;
             }
-            const mp3_file = selectedMp3Radio.closest('.file-item').dataset.filename;
+            const mp3_file = selectedAudioRadio.closest('.file-item').dataset.filename;
             const image_file = selectedImageRadio.closest('.thumbnail').dataset.filename;
             const videoBasename = document.getElementById('mp4-filename').value.trim();
             if (!videoBasename) {

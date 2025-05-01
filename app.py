@@ -64,8 +64,8 @@ def list_files():
 
 @app.route('/list_combined_files')
 def list_combined_files():
-    """List all combined MP3 files in the work directory"""
-    files = [f for f in os.listdir(WORKDIR) if f.endswith('.mp3')]
+    """List all combined MP3 and WAV files in the work directory"""
+    files = [f for f in os.listdir(WORKDIR) if f.endswith(('.mp3', '.wav'))]
     files.sort()
     return jsonify({'files': files})
 
@@ -125,19 +125,19 @@ def combine():
 
 @app.route('/create_video', methods=['POST'])
 def create_video_route():
-    """Create an MP4 file using a selected combined mp3 file and a selected image"""
+    """Create an MP4 file using a selected combined mp3/wav file and a selected image"""
     data = request.json
-    mp3_file = data.get('mp3_file')
+    audio_file = data.get('mp3_file')  # Can be either MP3 or WAV file
     image_file = data.get('image_file')
     video_basename = data.get('video_basename', '').strip()
     
-    if not mp3_file or not image_file:
-        return jsonify({'status': 'error', 'message': 'Both mp3 file and image file must be selected'})
+    if not audio_file or not image_file:
+        return jsonify({'status': 'error', 'message': 'Both audio file and image file must be selected'})
     
     if not video_basename:
         return jsonify({'status': 'error', 'message': 'Please provide a basename for the video output file'})
     
-    audio_path = os.path.join(WORKDIR, mp3_file)
+    audio_path = os.path.join(WORKDIR, audio_file)
     image_path = os.path.join(WORKDIR, image_file)
     
     try:
@@ -160,4 +160,3 @@ if __name__ == '__main__':
     # Ensure output directory exists
     os.makedirs(OUTPUT_DIR, exist_ok=True)
     app.run(debug=True)
-
