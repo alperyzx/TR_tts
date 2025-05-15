@@ -27,3 +27,7 @@ youtube kanalıma abone olmayı unutmayın, teşekkürler 😊
 
 # Detaylar
 <p><li> GoogleCloudPlatform texttospeech https://github.com/GoogleCloudPlatform/python-docs-samples/tree/main/texttospeech/snippets  </p>
+
+# Nasıl çalışır
+linux:  paketi indir -->  ./run.sh <br>
+windows:  paketi indir --> python3.13 app.py
