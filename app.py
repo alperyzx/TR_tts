@@ -7,6 +7,7 @@ import configparser
 from werkzeug.utils import secure_filename
 import combine_mp3
 from create_mp4 import create_video  # new import
+from pydub import AudioSegment
 
 app = Flask(__name__)
 
@@ -99,34 +100,48 @@ def serve_combined_audio(filename):
     """Serve a combined audio file for playback"""
     return send_from_directory(WORKDIR, filename)
 
+
 @app.route('/combine', methods=['POST'])
-def combine():
-    """Combine selected MP3 files in the order provided by the user drag-sort"""
-    # Expecting sorted list and basename from the UI
-    sorted_files = request.json.get('sorted_files', [])
-    basename = request.json.get('basename', '').strip()
-    if not sorted_files:
-        return jsonify({'status': 'error', 'message': 'No files selected'})
+def combine_files():
+    data = request.json
+    sorted_files = data.get('sorted_files', [])
+    basename = data.get('basename', '')
+
+    if len(sorted_files) < 2:
+        return jsonify({'status': 'error', 'message': 'At least two files required'})
+
     if not basename:
-        return jsonify({'status': 'error', 'message': 'Please provide a basename for the output file'})
-    
-    # Use values from config
-    album_artist = config['DEFAULT']['album_artist']
-    creator = config['DEFAULT']['creator']
-    album = config['DEFAULT']['album']
-    title = config['DEFAULT']['title']
-    artist = config['DEFAULT']['artist']
+        return jsonify({'status': 'error', 'message': 'Basename is required'})
 
-    output_file = os.path.join(WORKDIR, f"{basename}.mp3")
-    
-    # Call the combine function with the user's sorted file order
-    combine_mp3.combine_mp3_files_manual(OUTPUT_DIR, sorted_files, output_file, title, artist, album, album_artist, creator)
+    # Determine output format based on majority of input files
+    mp3_count = sum(1 for f in sorted_files if f.lower().endswith('.mp3'))
+    wav_count = sum(1 for f in sorted_files if f.lower().endswith('.wav'))
+    output_format = 'mp3'  # if mp3_count >= wav_count else 'wav'
 
-    return jsonify({
-        'status': 'success',
-        'message': 'Files combined successfully',
-        'output_file': output_file
-    })
+    try:
+        # Create an empty audio segment
+        combined = AudioSegment.empty()
+
+        # Append each file to the combined segment
+        for file in sorted_files:
+            file_path = os.path.join(OUTPUT_DIR, file)
+            # AudioSegment automatically detects format from file extension
+            segment = AudioSegment.from_file(file_path)
+            combined += segment
+
+        # Export with chosen format
+        output_file = f"{basename}.{output_format}"
+        output_path = os.path.join(WORKDIR, output_file)
+        combined.export(output_path, format=output_format)
+
+        return jsonify({
+            'status': 'success',
+            'message': 'Files combined successfully',
+            'output_file': output_file
+        })
+    except Exception as e:
+        return jsonify({'status': 'error', 'message': f'Error combining files: {str(e)}'})
+
 
 @app.route('/create_video', methods=['POST'])
 def create_video_route():
