@@ -190,8 +190,8 @@ def create_video_route():
         return jsonify({'status': 'error', 'message': 'Please provide a basename for the video output file'})
     
     audio_path = os.path.join(WORKDIR, audio_file)
-    image_path = os.path.join(WORKDIR, image_file)
-    
+    image_path = os.path.join(PICTURES_DIR, image_file)
+
     try:
         output_file = create_video(image_path=image_path, audio_path=audio_path, video_basename=video_basename)
         return jsonify({'status': 'success', 'message': 'MP4 file created successfully', 'output_file': output_file})

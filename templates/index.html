@@ -655,19 +655,23 @@
                             fileItem.className = 'file-item';
                             fileItem.dataset.filename = file;
 
+                            // Only checkbox for all actions
                             const checkbox = document.createElement('input');
                             checkbox.type = 'checkbox';
                             checkbox.className = 'form-check-input me-2';
-                            checkbox.addEventListener('change', function() {
-                                updateCombinedSelection(this, fileItem);
+                            checkbox.addEventListener('change', function(e) {
+                                e.stopPropagation();
+                                updateCombinedSelection(checkbox, fileItem);
+                                updateCombinedMP4FieldVisibility();
                             });
                             fileItem.appendChild(checkbox);
 
-                            // Make line clickable for selection
+                            // Make line clickable for selection (checkbox only)
                             fileItem.addEventListener('click', function(e) {
                                 if (['INPUT', 'AUDIO', 'BUTTON'].indexOf(e.target.tagName) === -1) {
                                     checkbox.checked = !checkbox.checked;
                                     updateCombinedSelection(checkbox, fileItem);
+                                    updateCombinedMP4FieldVisibility();
                                 }
                             });
 
@@ -688,10 +692,20 @@
                     }
                     // Reset delete button state
                     document.getElementById('delete-combined-btn').disabled = true;
+                    document.getElementById('combine-combined-btn').disabled = true;
+                    document.getElementById('combine-combined-basename-container').style.display = 'none';
+                    updateCombinedMP4FieldVisibility();
                 })
                 .catch(error => {
                     showMessage('Error loading combined files: ' + error, 'danger');
                 });
+        }
+
+        // Helper for MP4 field visibility with checkboxes
+        function updateCombinedMP4FieldVisibility() {
+            const checked = document.querySelectorAll('#combined-file-list .file-item input[type="checkbox"]:checked');
+            const imageSelected = document.querySelector('input[name="selected_image"]:checked');
+            document.getElementById('mp4-filename-container').style.display = (checked.length === 1 && imageSelected) ? 'inline-block' : 'none';
         }
 
         function updateCombinedSelection(checkbox, fileItem) {
@@ -720,28 +734,48 @@
                 return;
             }
             combineCombinedBtn.disabled = true;
-            combineCombinedBtn.innerHTML = '<span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span> Combining...';
-            fetch('/combine_combined_files', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ sorted_files: selectedFiles, basename: basename })
-            })
-            .then(response => response.json())
-            .then(data => {
-                combineCombinedBtn.disabled = false;
-                combineCombinedBtn.innerHTML = originalText;
-                if (data.status === 'success') {
-                    showMessage(data.message + ': ' + data.output_file, 'success');
-                    loadCombinedFiles();
-                } else {
-                    showMessage(data.message, 'danger');
-                }
-            })
-            .catch(error => {
-                combineCombinedBtn.disabled = false;
-                combineCombinedBtn.innerHTML = originalText;
-                showMessage('Error: ' + error, 'danger');
-            });
+            combineCombinedBtn.innerHTML = '<span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span> Checking...';
+            // Check if file already exists before combining
+            fetch('/list_combined_files')
+                .then(response => response.json())
+                .then(data => {
+                    const exists = data.files && data.files.includes(basename + '.mp3');
+                    if (exists) {
+                        if (!confirm('A file with this name already exists. Overwrite?')) {
+                            combineCombinedBtn.disabled = false;
+                            combineCombinedBtn.innerHTML = originalText;
+                            return;
+                        }
+                    }
+                    // Proceed with combine
+                    combineCombinedBtn.innerHTML = '<span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span> Combining...';
+                    fetch('/combine_combined_files', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ sorted_files: selectedFiles, basename: basename })
+                    })
+                    .then(response => response.json())
+                    .then(data => {
+                        combineCombinedBtn.disabled = false;
+                        combineCombinedBtn.innerHTML = originalText;
+                        if (data.status === 'success') {
+                            showMessage(data.message + ': ' + data.output_file, 'success');
+                            loadCombinedFiles();
+                        } else {
+                            showMessage(data.message, 'danger');
+                        }
+                    })
+                    .catch(error => {
+                        combineCombinedBtn.disabled = false;
+                        combineCombinedBtn.innerHTML = originalText;
+                        showMessage('Error: ' + error, 'danger');
+                    });
+                })
+                .catch(error => {
+                    showMessage('Error checking existing files: ' + error, 'danger');
+                    combineCombinedBtn.disabled = false;
+                    combineCombinedBtn.innerHTML = originalText;
+                });
         }
 
         function deleteCombinedFiles() {
@@ -792,7 +826,7 @@
                                 radio.type = 'radio';
                                 radio.name = 'selected_image';
                                 radio.className = 'form-check-input';
-                                radio.addEventListener('change', updateMP4FieldVisibility);
+                                radio.addEventListener('change', updateCombinedMP4FieldVisibility);
                                 thumb.appendChild(radio);
 
                                 // Create image element with filename as tooltip
@@ -810,7 +844,7 @@
                                         });
                                         radio.checked = true;
                                         thumb.classList.add('selected');
-                                        updateMP4FieldVisibility();
+                                        updateCombinedMP4FieldVisibility();
                                     }
                                 });
 
@@ -890,7 +924,7 @@
 
            // Show loading state
            combineBtn.disabled = true;
-           combineBtn.innerHTML = '<span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span> Combining...';
+           combineBtn.innerHTML = '<span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span> Checking...';
 
            let sortedFiles = Array.from(document.querySelectorAll('#file-list .file-item'))
                .filter(item => item.querySelector('input[type="checkbox"]').checked)
@@ -913,64 +947,79 @@
                return;
            }
 
-           fetch('/combine', {
-               method: 'POST',
-               headers: {
-                   'Content-Type': 'application/json'
-               },
-               body: JSON.stringify({ sorted_files: sortedFiles, basename: combinedBasename })
-           })
-           .then(response => response.json())
-           .then(data => {
-               // Reset button state
-               combineBtn.disabled = false;
-               combineBtn.innerHTML = originalText;
+           // Check if file already exists before combining
+           fetch('/list_combined_files')
+               .then(response => response.json())
+               .then(data => {
+                   const exists = data.files && data.files.includes(combinedBasename + '.mp3');
+                   if (exists) {
+                       if (!confirm('A file with this name already exists. Overwrite?')) {
+                           combineBtn.disabled = false;
+                           combineBtn.innerHTML = originalText;
+                           return;
+                       }
+                   }
+                   // Proceed with combine
+                   combineBtn.innerHTML = '<span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span> Combining...';
+                   fetch('/combine', {
+                       method: 'POST',
+                       headers: {
+                           'Content-Type': 'application/json'
+                       },
+                       body: JSON.stringify({ sorted_files: sortedFiles, basename: combinedBasename })
+                   })
+                   .then(response => response.json())
+                   .then(data => {
+                       // Reset button state
+                       combineBtn.disabled = false;
+                       combineBtn.innerHTML = originalText;
 
-               if (data.status === 'success') {
-                   showMessage(data.message + ': ' + data.output_file, 'success');
-                   loadCombinedFiles();  // refresh Combined Audio Files
-               } else {
-                   showMessage(data.message, 'danger');
-               }
-           })
-           .catch(error => {
-               // Reset button state
-               combineBtn.disabled = false;
-               combineBtn.innerHTML = originalText;
+                       if (data.status === 'success') {
+                           showMessage(data.message + ': ' + data.output_file, 'success');
+                           loadCombinedFiles();  // refresh Combined Audio Files
+                       } else {
+                           showMessage(data.message, 'danger');
+                       }
+                   })
+                   .catch(error => {
+                       // Reset button state
+                       combineBtn.disabled = false;
+                       combineBtn.innerHTML = originalText;
 
-               showMessage('Error: ' + error, 'danger');
-           });
+                       showMessage('Error: ' + error, 'danger');
+                   });
+               })
+               .catch(error => {
+                   showMessage('Error checking existing files: ' + error, 'danger');
+                   combineBtn.disabled = false;
+                   combineBtn.innerHTML = originalText;
+               });
        }
 
         function createVideo() {
             const createVideoBtn = document.getElementById('create-video-btn');
             const originalText = createVideoBtn.innerHTML;
-
-            // Show loading state
             createVideoBtn.disabled = true;
             createVideoBtn.innerHTML = '<span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span> Creating MP4...';
 
-            const selectedAudioRadio = document.querySelector('input[name="combined_mp3"]:checked');
+            // Use checkbox selection for audio
+            const checked = document.querySelectorAll('#combined-file-list .file-item input[type="checkbox"]:checked');
             const selectedImageRadio = document.querySelector('input[name="selected_image"]:checked');
-            if (!selectedAudioRadio || !selectedImageRadio) {
-                showMessage('Please select one audio file and one image', 'warning');
-                // Reset button state
+            if (checked.length !== 1 || !selectedImageRadio) {
+                showMessage('Please select exactly one audio file and one image', 'warning');
                 createVideoBtn.disabled = false;
                 createVideoBtn.innerHTML = originalText;
                 return;
             }
-
-            const mp3_file = selectedAudioRadio.closest('.file-item').dataset.filename;
+            const mp3_file = checked[0].closest('.file-item').dataset.filename;
             const image_file = selectedImageRadio.closest('.thumbnail').dataset.filename;
             const videoBasename = document.getElementById('mp4-filename').value.trim();
             if (!videoBasename) {
                 showMessage('Please provide a filename for the MP4 output', 'warning');
-                // Reset button state
                 createVideoBtn.disabled = false;
                 createVideoBtn.innerHTML = originalText;
                 return;
             }
-
             fetch('/create_video', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
@@ -978,10 +1027,8 @@
             })
             .then(response => response.json())
             .then(data => {
-                // Reset button state
                 createVideoBtn.disabled = false;
                 createVideoBtn.innerHTML = originalText;
-
                 if (data.status === 'success') {
                     showMessage(data.message, 'success');
                     loadVideos();
@@ -990,10 +1037,8 @@
                 }
             })
             .catch(error => {
-                // Reset button state
                 createVideoBtn.disabled = false;
                 createVideoBtn.innerHTML = originalText;
-
                 showMessage('Error: ' + error, 'danger');
             });
         }
