@@ -317,7 +317,7 @@
                         <h5 class="m-0">Combined Audio Files</h5>
                         <div>
                             <button id="refresh-combined-btn" class="btn btn-sm btn-outline-secondary"><i class="bi bi-arrow-clockwise"></i> Refresh</button>
-                            <button id="combine-combined-btn" class="btn btn-sm btn-success ms-2" disabled>Combine Selected</button>
+                            <button id="combine-combined-btn" class="btn btn-sm btn-success ms-2" disabled>Combine</button>
                             <button id="delete-combined-btn" class="btn btn-sm btn-danger ms-2" disabled>Delete</button>
                         </div>
                     </div>
@@ -419,6 +419,12 @@
             // Initialize sortable list for files
             var fileList = document.getElementById('file-list');
             Sortable.create(fileList, {
+                animation: 150
+            });
+
+            // New: Initialize sortable for combined-file-list
+            var combinedFileList = document.getElementById('combined-file-list');
+            Sortable.create(combinedFileList, {
                 animation: 150
             });
 
@@ -564,6 +570,8 @@
                     combinedUploadInput.value = '';
                 });
             }
+
+            document.getElementById('delete-combined-btn').addEventListener('click', deleteCombinedFiles);
         });
 
         // New helper: update MP4 filename visibility based on selections
@@ -686,6 +694,8 @@
         document.getElementById('combine-combined-btn').addEventListener('click', combineCombinedFiles);
 
         function combineCombinedFiles() {
+            const combineCombinedBtn = document.getElementById('combine-combined-btn');
+            const originalText = combineCombinedBtn.innerHTML;
             let fileItems = Array.from(document.querySelectorAll('#combined-file-list .file-item'));
             let selectedFiles = fileItems.filter(item => item.querySelector('input[type="checkbox"]').checked).map(item => item.dataset.filename);
             if (selectedFiles.length < 2) {
@@ -697,7 +707,8 @@
                 showMessage('Please provide a basename for the combined file', 'warning');
                 return;
             }
-            document.getElementById('combine-combined-btn').disabled = true;
+            combineCombinedBtn.disabled = true;
+            combineCombinedBtn.innerHTML = '<span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span> Combining...';
             fetch('/combine_combined_files', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
@@ -705,7 +716,8 @@
             })
             .then(response => response.json())
             .then(data => {
-                document.getElementById('combine-combined-btn').disabled = false;
+                combineCombinedBtn.disabled = false;
+                combineCombinedBtn.innerHTML = originalText;
                 if (data.status === 'success') {
                     showMessage(data.message + ': ' + data.output_file, 'success');
                     loadCombinedFiles();
@@ -714,12 +726,11 @@
                 }
             })
             .catch(error => {
-                document.getElementById('combine-combined-btn').disabled = false;
+                combineCombinedBtn.disabled = false;
+                combineCombinedBtn.innerHTML = originalText;
                 showMessage('Error: ' + error, 'danger');
             });
         }
-
-        document.getElementById('delete-combined-btn').addEventListener('click', deleteCombinedFiles);
 
         function deleteCombinedFiles() {
             let fileItems = Array.from(document.querySelectorAll('#combined-file-list .file-item'));
@@ -1027,3 +1038,4 @@
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.2.3/dist/js/bootstrap.bundle.min.js"></script>
 </body>
 </html>
+
