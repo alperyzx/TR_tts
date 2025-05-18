@@ -344,16 +344,22 @@
                 <!-- New Card: Select Image for Video -->
                 <div class="card mt-4">
                     <div class="card-header d-flex justify-content-between align-items-center">
-                        <h4 class="m-0">Select Image for Video</h4>
+                        <h4 class="m-0">
+                            <a data-bs-toggle="collapse" href="#select-image-collapse" role="button" aria-expanded="true" aria-controls="select-image-collapse" class="text-decoration-none text-dark">
+                                Select Image for Video
+                            </a>
+                        </h4>
                         <div>
                             <button id="refresh-images-btn" class="btn btn-sm btn-outline-secondary" onclick="refreshImages()">
                                 <i class="bi bi-arrow-clockwise"></i> Refresh
                             </button>
                         </div>
                     </div>
-                    <div class="card-body">
-                        <div id="image-list" class="mb-3">
-                            <p>No images available</p>
+                    <div id="select-image-collapse" class="collapse show">
+                        <div class="card-body">
+                            <div id="image-list" class="mb-3">
+                                <p>No images available</p>
+                            </div>
                         </div>
                     </div>
                 </div>
