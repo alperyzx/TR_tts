@@ -16,8 +16,9 @@ config = configparser.ConfigParser()
 config.read('variables.cfg', encoding='utf-8')
 
 # Get directories from config
-OUTPUT_DIR = config['DEFAULT']['tts_output_dir']
 WORKDIR = config['DEFAULT']['workdir']
+PICTURES_DIR = config['DEFAULT']['pictures']
+OUTPUT_DIR = config['DEFAULT']['tts_output_dir']
 
 @app.route('/')
 def index():
@@ -77,9 +78,9 @@ def list_combined_files():
 
 @app.route('/list_images')
 def list_images():
-    """List all image files in the work directory with common extensions"""
+    """List all image files in the pictures directory with common extensions"""
     valid_exts = ('.png', '.jpg', '.jpeg', '.gif')
-    files = [f for f in os.listdir(WORKDIR) if f.lower().endswith(valid_exts)]
+    files = [f for f in os.listdir(PICTURES_DIR) if f.lower().endswith(valid_exts)]
     files.sort()
     return jsonify({'images': files})
 
@@ -168,8 +169,8 @@ def create_video_route():
 
 @app.route('/images/<path:filename>')
 def serve_image(filename):
-    """Serve an image file"""
-    return send_from_directory(WORKDIR, filename)
+    """Serve an image file from the pictures directory"""
+    return send_from_directory(PICTURES_DIR, filename)
 
 @app.route('/videos/<path:filename>')
 def serve_video_file(filename):
@@ -189,6 +190,31 @@ def delete_files():
             errors.append(f"Invalid file type: {filename}")
             continue
         file_path = os.path.join(OUTPUT_DIR, filename)
+        if os.path.isfile(file_path):
+            try:
+                os.remove(file_path)
+                deleted.append(filename)
+            except Exception as e:
+                errors.append(f"Error deleting {filename}: {str(e)}")
+        else:
+            errors.append(f"File not found: {filename}")
+    if errors:
+        return jsonify({'status': 'error', 'message': '; '.join(errors), 'deleted': deleted})
+    return jsonify({'status': 'success', 'message': f"Deleted {len(deleted)} file(s)", 'deleted': deleted})
+
+@app.route('/delete_combined_files', methods=['POST'])
+def delete_combined_files():
+    """Delete selected combined audio files from the work directory"""
+    data = request.get_json()
+    files = data.get('files', [])
+    deleted = []
+    errors = []
+    for filename in files:
+        # Only allow deletion of .mp3 or .wav in WORKDIR
+        if not (filename.endswith('.mp3') or filename.endswith('.wav')):
+            errors.append(f"Invalid file type: {filename}")
+            continue
+        file_path = os.path.join(WORKDIR, filename)
         if os.path.isfile(file_path):
             try:
                 os.remove(file_path)

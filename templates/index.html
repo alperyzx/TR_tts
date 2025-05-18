@@ -300,6 +300,7 @@
                         <h5 class="m-0">Combined Audio Files</h5>
                         <div>
                             <button id="refresh-combined-btn" class="btn btn-sm btn-outline-secondary"><i class="bi bi-arrow-clockwise"></i> Refresh</button>
+                            <button id="delete-combined-btn" class="btn btn-sm btn-danger ms-2" disabled>Delete</button>
                         </div>
                     </div>
                     <div class="card-body">
@@ -543,14 +544,22 @@
                             fileItem.className = 'file-item';
                             fileItem.dataset.filename = file;
 
-                            const radio = document.createElement('input');
-                            radio.type = 'radio';
-                            radio.name = 'combined_mp3';
-                            radio.className = 'form-check-input me-2';
-                            radio.addEventListener('change', updateMP4FieldVisibility);
-                            fileItem.appendChild(radio);
+                            const checkbox = document.createElement('input');
+                            checkbox.type = 'checkbox';
+                            checkbox.className = 'form-check-input me-2';
+                            checkbox.addEventListener('change', function() {
+                                updateCombinedSelection(this, fileItem);
+                            });
+                            fileItem.appendChild(checkbox);
 
-                            // Display just the filename without additional format badge
+                            // Make line clickable for selection
+                            fileItem.addEventListener('click', function(e) {
+                                if (['INPUT', 'AUDIO', 'BUTTON'].indexOf(e.target.tagName) === -1) {
+                                    checkbox.checked = !checkbox.checked;
+                                    updateCombinedSelection(checkbox, fileItem);
+                                }
+                            });
+
                             const fileInfo = document.createElement('div');
                             fileInfo.innerHTML = `<strong>${file}</strong>`;
                             fileItem.appendChild(fileInfo);
@@ -561,26 +570,55 @@
                             audio.src = `/combined_audio/${file}`;
                             fileItem.appendChild(audio);
 
-                            // Make entire file item clickable to select it
-                            fileItem.addEventListener('click', function(e) {
-                                if (e.target.tagName !== 'INPUT') {
-                                    document.querySelectorAll('#combined-file-list .file-item')
-                                        .forEach(item => item.classList.remove('selected'));
-                                    radio.checked = true;
-                                    fileItem.classList.add('selected');
-                                    updateMP4FieldVisibility();
-                                }
-                            });
-
                             combinedList.appendChild(fileItem);
                         });
                     } else {
                         combinedList.innerHTML = '<p>No combined files available</p>';
                     }
+                    // Reset delete button state
+                    document.getElementById('delete-combined-btn').disabled = true;
                 })
                 .catch(error => {
                     showMessage('Error loading combined files: ' + error, 'danger');
                 });
+        }
+
+        function updateCombinedSelection(checkbox, fileItem) {
+            let fileItems = Array.from(document.querySelectorAll('#combined-file-list .file-item'));
+            const selectedCount = fileItems.filter(item => item.querySelector('input[type="checkbox"]').checked).length;
+            document.getElementById('delete-combined-btn').disabled = selectedCount === 0;
+            checkbox.checked ? fileItem.classList.add('selected') : fileItem.classList.remove('selected');
+        }
+
+        document.getElementById('delete-combined-btn').addEventListener('click', deleteCombinedFiles);
+
+        function deleteCombinedFiles() {
+            let fileItems = Array.from(document.querySelectorAll('#combined-file-list .file-item'));
+            let selectedFiles = fileItems.filter(item => item.querySelector('input[type="checkbox"]').checked).map(item => item.dataset.filename);
+            if (selectedFiles.length === 0) {
+                showMessage('Please select at least one file to delete', 'warning');
+                return;
+            }
+            if (!confirm('Are you sure you want to delete the selected combined file(s)? This action cannot be undone.')) {
+                return;
+            }
+            fetch('/delete_combined_files', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ files: selectedFiles })
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.status === 'success') {
+                    showMessage(data.message, 'success');
+                    loadCombinedFiles();
+                } else {
+                    showMessage(data.message, 'danger');
+                }
+            })
+            .catch(error => {
+                showMessage('Error: ' + error, 'danger');
+            });
         }
 
         function loadImages() {
