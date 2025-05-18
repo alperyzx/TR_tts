@@ -176,6 +176,31 @@ def serve_video_file(filename):
     """Serve a video file"""
     return send_from_directory(WORKDIR, filename)
 
+@app.route('/delete_files', methods=['POST'])
+def delete_files():
+    """Delete selected audio files from the output directory"""
+    data = request.get_json()
+    files = data.get('files', [])
+    deleted = []
+    errors = []
+    for filename in files:
+        # Only allow deletion of .mp3 or .wav in OUTPUT_DIR
+        if not (filename.endswith('.mp3') or filename.endswith('.wav')):
+            errors.append(f"Invalid file type: {filename}")
+            continue
+        file_path = os.path.join(OUTPUT_DIR, filename)
+        if os.path.isfile(file_path):
+            try:
+                os.remove(file_path)
+                deleted.append(filename)
+            except Exception as e:
+                errors.append(f"Error deleting {filename}: {str(e)}")
+        else:
+            errors.append(f"File not found: {filename}")
+    if errors:
+        return jsonify({'status': 'error', 'message': '; '.join(errors), 'deleted': deleted})
+    return jsonify({'status': 'success', 'message': f"Deleted {len(deleted)} file(s)", 'deleted': deleted})
+
 if __name__ == '__main__':
     # Ensure output directory exists
     os.makedirs(OUTPUT_DIR, exist_ok=True)

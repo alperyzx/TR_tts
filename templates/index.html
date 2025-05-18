@@ -34,7 +34,7 @@
         /* New: force equal length for combined audio players */
         #combined-file-list .audio-player {
             width: 50%;
-            margin:-left: auto;
+            margin-left: auto;
         }
         /* New styles: align filename to the left and fill the space */
         #file-list .file-item div:nth-child(2),
@@ -178,6 +178,77 @@
                 background-color: #333;
                 color: #adb5bd;
             }
+            /* More specific rule for video elements in the video list */
+            #video-list .file-item video.audio-player {
+                width: 50%;
+                margin-left: auto;
+            }
+
+            /* Make sure the file items have proper flex layout */
+            #video-list .file-item {
+                display: flex !important;
+                align-items: center;
+                justify-content: space-between;
+            }
+
+            /* Style the filename div */
+            #video-list .file-item > div:not(.vsc-controller) {
+                flex: 1;
+                max-width: 45%;
+                overflow: hidden;
+                text-overflow: ellipsis;
+                white-space: nowrap;
+                margin-right: auto;
+            }
+
+            /* Target filename div in dark mode */
+            #video-list .file-item div:has(strong) {
+                flex: 1;
+                max-width: 45%;
+                overflow: hidden;
+                text-overflow: ellipsis;
+                white-space: nowrap;
+                margin-right: auto;
+            }
+        }
+
+        /* Make video players align to the right like audio players */
+        #video-list .file-item video {
+            width: 50%;
+            margin-left: auto;
+        }
+
+        /* Ensure file items in video list have proper layout */
+        #video-list .file-item {
+            display: flex;
+            align-items: center;
+        }
+
+        /* Target the filename div more specifically - it contains a strong tag */
+        #video-list .file-item div:has(strong) {
+            flex: 1;
+            max-width: 45%;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+            margin-right: auto;
+        }
+
+        /* Alternative selector for browsers that don't support :has */
+        #video-list .file-item div strong {
+            display: inline-block;
+            max-width: 100%;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+        }
+
+        /* Handle vsc-controller if present */
+        #video-list .file-item .vsc-controller {
+            position: absolute;
+            z-index: 1;
+            margin: 0;
+            flex: 0;
         }
     </style>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/Sortable/1.14.0/Sortable.min.js"></script> <!-- Added Sortable.js -->
@@ -266,7 +337,8 @@
                         </h5>
                         <div>
                             <button id="refresh-btn" class="btn btn-sm btn-outline-secondary"><i class="bi bi-arrow-clockwise"></i> Refresh</button>
-                            <button id="combine-btn" class="btn btn-sm btn-success ms-2" disabled>Combine Selected Files</button>
+                            <button id="combine-btn" class="btn btn-sm btn-success ms-2" disabled>Combine</button>
+                            <button id="delete-btn" class="btn btn-sm btn-danger" disabled>Delete</button>
                             <label class="ms-2 mb-0 align-middle" for="select-all">
                                 <input type="checkbox" id="select-all" class="form-check-input d-inline-block align-middle"> Select All
                             </label>
@@ -381,6 +453,7 @@
             document.getElementById('create-video-btn').addEventListener('click', createVideo);
 
             document.getElementById('combine-btn').addEventListener('click', combineFiles);
+            document.getElementById('delete-btn').addEventListener('click', deleteFiles);
 
             document.getElementById('select-all').addEventListener('change', function() {
                 let checkboxes = document.querySelectorAll('#file-list .file-item input[type="checkbox"]');
@@ -397,6 +470,7 @@
                 const selectedCount = fileItems.filter(item => item.querySelector('input[type="checkbox"]').checked).length;
                 document.getElementById('combine-btn').disabled = selectedCount < 2;
                 document.getElementById('combined-basename-container').style.display = selectedCount >= 2 ? 'block' : 'none';
+                document.getElementById('delete-btn').disabled = selectedCount === 0;
             });
         });
 
@@ -603,10 +677,10 @@
                             item.appendChild(fileInfo);
 
                             const video = document.createElement('video');
-                            video.width = 200;
                             video.controls = true;
                             video.src = `/videos/${file}`;
-                            video.className = 'ms-2';
+                            // Apply the same pattern as audio players
+                            video.className = 'audio-player ms-2'; // Use audio-player class for consistent styling
                             item.appendChild(video);
 
                             videoList.appendChild(item);
@@ -679,17 +753,31 @@
        }
 
         function createVideo() {
+            const createVideoBtn = document.getElementById('create-video-btn');
+            const originalText = createVideoBtn.innerHTML;
+
+            // Show loading state
+            createVideoBtn.disabled = true;
+            createVideoBtn.innerHTML = '<span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span> Creating MP4...';
+
             const selectedAudioRadio = document.querySelector('input[name="combined_mp3"]:checked');
             const selectedImageRadio = document.querySelector('input[name="selected_image"]:checked');
             if (!selectedAudioRadio || !selectedImageRadio) {
                 showMessage('Please select one audio file and one image', 'warning');
+                // Reset button state
+                createVideoBtn.disabled = false;
+                createVideoBtn.innerHTML = originalText;
                 return;
             }
+
             const mp3_file = selectedAudioRadio.closest('.file-item').dataset.filename;
             const image_file = selectedImageRadio.closest('.thumbnail').dataset.filename;
             const videoBasename = document.getElementById('mp4-filename').value.trim();
             if (!videoBasename) {
                 showMessage('Please provide a filename for the MP4 output', 'warning');
+                // Reset button state
+                createVideoBtn.disabled = false;
+                createVideoBtn.innerHTML = originalText;
                 return;
             }
 
@@ -700,6 +788,10 @@
             })
             .then(response => response.json())
             .then(data => {
+                // Reset button state
+                createVideoBtn.disabled = false;
+                createVideoBtn.innerHTML = originalText;
+
                 if (data.status === 'success') {
                     showMessage(data.message, 'success');
                     loadVideos();
@@ -708,6 +800,10 @@
                 }
             })
             .catch(error => {
+                // Reset button state
+                createVideoBtn.disabled = false;
+                createVideoBtn.innerHTML = originalText;
+
                 showMessage('Error: ' + error, 'danger');
             });
         }
@@ -727,7 +823,37 @@
             const selectedCount = fileItems.filter(item => item.querySelector('input[type="checkbox"]').checked).length;
             document.getElementById('combine-btn').disabled = selectedCount < 2;
             document.getElementById('combined-basename-container').style.display = selectedCount >= 2 ? 'block' : 'none';
+            document.getElementById('delete-btn').disabled = selectedCount === 0;
             checkbox.checked ? fileItem.classList.add('selected') : fileItem.classList.remove('selected');
+        }
+
+        function deleteFiles() {
+            let fileItems = Array.from(document.querySelectorAll('#file-list .file-item'));
+            let selectedFiles = fileItems.filter(item => item.querySelector('input[type="checkbox"]').checked).map(item => item.dataset.filename);
+            if (selectedFiles.length === 0) {
+                showMessage('Please select at least one file to delete', 'warning');
+                return;
+            }
+            if (!confirm('Are you sure you want to delete the selected file(s)? This action cannot be undone.')) {
+                return;
+            }
+            fetch('/delete_files', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ files: selectedFiles })
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.status === 'success') {
+                    showMessage(data.message, 'success');
+                    loadFiles();
+                } else {
+                    showMessage(data.message, 'danger');
+                }
+            })
+            .catch(error => {
+                showMessage('Error: ' + error, 'danger');
+            });
         }
     </script>
 
