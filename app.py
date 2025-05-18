@@ -227,6 +227,36 @@ def delete_combined_files():
         return jsonify({'status': 'error', 'message': '; '.join(errors), 'deleted': deleted})
     return jsonify({'status': 'success', 'message': f"Deleted {len(deleted)} file(s)", 'deleted': deleted})
 
+@app.route('/upload_combined_files', methods=['POST'])
+def upload_combined_files():
+    """Handle upload of MP3/WAV files to WORKDIR for Combined Audio Files section"""
+    if 'files' not in request.files and not request.files:
+        # For fetch+FormData, files may be in request.files as a MultiDict
+        files = request.files.getlist('files')
+    else:
+        files = request.files.getlist('files')
+    if not files:
+        return jsonify({'status': 'error', 'message': 'No files uploaded.'})
+    saved = []
+    errors = []
+    for file in files:
+        filename = secure_filename(file.filename)
+        if not (filename.endswith('.mp3') or filename.endswith('.wav')):
+            errors.append(f"Invalid file type: {filename}")
+            continue
+        save_path = os.path.join(WORKDIR, filename)
+        try:
+            file.save(save_path)
+            saved.append(filename)
+        except Exception as e:
+            errors.append(f"Error saving {filename}: {str(e)}")
+    if errors and not saved:
+        return jsonify({'status': 'error', 'message': '; '.join(errors)})
+    elif errors:
+        return jsonify({'status': 'success', 'message': f"Some files uploaded: {', '.join(saved)}. Errors: {'; '.join(errors)}"})
+    else:
+        return jsonify({'status': 'success', 'message': f"Uploaded {len(saved)} file(s) successfully."})
+
 if __name__ == '__main__':
     # Ensure output directory exists
     os.makedirs(OUTPUT_DIR, exist_ok=True)

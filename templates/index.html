@@ -210,6 +210,17 @@
                 white-space: nowrap;
                 margin-right: auto;
             }
+
+            /* Night mode for drag-and-drop upload area in Combined Audio Files */
+            #combined-upload-container {
+                background-color: #222 !important;
+                border-color: #0d6efd !important;
+                color: #e0e0e0;
+            }
+            #combined-upload-container.bg-primary {
+                background-color: #0d6efd !important;
+                color: #fff !important;
+            }
         }
 
         /* Make video players align to the right like audio players */
@@ -304,6 +315,11 @@
                         </div>
                     </div>
                     <div class="card-body">
+                        <!-- Drag and Drop Upload Area -->
+                        <div id="combined-upload-container" class="mb-3 p-3 border border-2 border-primary rounded bg-light text-center" style="cursor:pointer;">
+                            <span id="combined-upload-label">Drag & Drop MP3/WAV files here or click to upload</span>
+                            <input type="file" id="combined-upload-input" accept=".mp3,.wav" multiple style="display:none;">
+                        </div>
                         <div id="combined-file-list" class="mb-3">
                             <p>No combined files available</p>
                         </div>
@@ -473,6 +489,71 @@
                 document.getElementById('combined-basename-container').style.display = selectedCount >= 2 ? 'block' : 'none';
                 document.getElementById('delete-btn').disabled = selectedCount === 0;
             });
+
+            // Drag and Drop Upload for Combined Audio Files
+            const combinedUploadContainer = document.getElementById('combined-upload-container');
+            const combinedUploadInput = document.getElementById('combined-upload-input');
+            const combinedUploadLabel = document.getElementById('combined-upload-label');
+
+            combinedUploadContainer.addEventListener('click', function() {
+                combinedUploadInput.click();
+            });
+
+            combinedUploadInput.addEventListener('change', function(e) {
+                handleCombinedFilesUpload(e.target.files);
+            });
+
+            combinedUploadContainer.addEventListener('dragover', function(e) {
+                e.preventDefault();
+                combinedUploadContainer.classList.add('bg-primary', 'text-white');
+            });
+            combinedUploadContainer.addEventListener('dragleave', function(e) {
+                e.preventDefault();
+                combinedUploadContainer.classList.remove('bg-primary', 'text-white');
+            });
+            combinedUploadContainer.addEventListener('drop', function(e) {
+                e.preventDefault();
+                combinedUploadContainer.classList.remove('bg-primary', 'text-white');
+                handleCombinedFilesUpload(e.dataTransfer.files);
+            });
+
+            function handleCombinedFilesUpload(files) {
+                if (!files.length) return;
+                const formData = new FormData();
+                let valid = false;
+                for (let i = 0; i < files.length; i++) {
+                    const file = files[i];
+                    if (file.name.endsWith('.mp3') || file.name.endsWith('.wav')) {
+                        formData.append('files', file);
+                        valid = true;
+                    }
+                }
+                if (!valid) {
+                    showMessage('Only MP3 and WAV files are allowed.', 'warning');
+                    return;
+                }
+                combinedUploadLabel.textContent = 'Uploading...';
+                fetch('/upload_combined_files', {
+                    method: 'POST',
+                    body: formData
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.status === 'success') {
+                        showMessage(data.message, 'success');
+                        loadCombinedFiles();
+                    } else {
+                        showMessage(data.message, 'danger');
+                    }
+                })
+                .catch(error => {
+                    showMessage('Error: ' + error, 'danger');
+                })
+                .finally(() => {
+                    combinedUploadLabel.textContent = 'Drag & Drop MP3/WAV files here or click to upload';
+                    combinedUploadInput.value = '';
+                });
+            }
         });
 
         // New helper: update MP4 filename visibility based on selections
