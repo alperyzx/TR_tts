@@ -222,6 +222,16 @@
                 background-color: #0d6efd !important;
                 color: #fff !important;
             }
+            /* Night mode for drag-and-drop upload area in Select Image for Video */
+            #image-upload-container {
+                background-color: #222 !important;
+                border-color: #0d6efd !important;
+                color: #e0e0e0;
+            }
+            #image-upload-container.bg-primary {
+                background-color: #0d6efd !important;
+                color: #fff !important;
+            }
             /* Night mode for combine-combined-basename input field */
             #combine-combined-basename {
                 background-color: #333;
@@ -358,6 +368,11 @@
                     </div>
                     <div id="select-image-collapse" class="collapse show">
                         <div class="card-body">
+                            <!-- New: Drag and Drop Upload Area for Images -->
+                            <div id="image-upload-container" class="mb-3 p-3 border border-2 border-primary rounded bg-light text-center" style="cursor:pointer;">
+                                <span id="image-upload-label">Drag & Drop images here or click to upload</span>
+                                <input type="file" id="image-upload-input" accept=".png,.jpg,.jpeg,.gif" multiple style="display:none;">
+                            </div>
                             <div id="image-list" class="mb-3">
                                 <p>No images available</p>
                             </div>
@@ -586,6 +601,71 @@
             }
 
             document.getElementById('delete-combined-btn').addEventListener('click', deleteCombinedFiles);
+
+            // Drag and Drop Upload for Images
+            const imageUploadContainer = document.getElementById('image-upload-container');
+            const imageUploadInput = document.getElementById('image-upload-input');
+            const imageUploadLabel = document.getElementById('image-upload-label');
+
+            imageUploadContainer.addEventListener('click', function() {
+                imageUploadInput.click();
+            });
+
+            imageUploadInput.addEventListener('change', function(e) {
+                handleImageUpload(e.target.files);
+            });
+
+            imageUploadContainer.addEventListener('dragover', function(e) {
+                e.preventDefault();
+                imageUploadContainer.classList.add('bg-primary', 'text-white');
+            });
+            imageUploadContainer.addEventListener('dragleave', function(e) {
+                e.preventDefault();
+                imageUploadContainer.classList.remove('bg-primary', 'text-white');
+            });
+            imageUploadContainer.addEventListener('drop', function(e) {
+                e.preventDefault();
+                imageUploadContainer.classList.remove('bg-primary', 'text-white');
+                handleImageUpload(e.dataTransfer.files);
+            });
+
+            function handleImageUpload(files) {
+                if (!files.length) return;
+                const formData = new FormData();
+                let valid = false;
+                for (let i = 0; i < files.length; i++) {
+                    const file = files[i];
+                    if (file.name.match(/\.(png|jpg|jpeg|gif)$/i)) {
+                        formData.append('files', file);
+                        valid = true;
+                    }
+                }
+                if (!valid) {
+                    showMessage('Only PNG, JPG, JPEG, and GIF files are allowed.', 'warning');
+                    return;
+                }
+                imageUploadLabel.textContent = 'Uploading...';
+                fetch('/upload_image', {
+                    method: 'POST',
+                    body: formData
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.status === 'success') {
+                        showMessage(data.message, 'success');
+                        loadImages();
+                    } else {
+                        showMessage(data.message, 'danger');
+                    }
+                })
+                .catch(error => {
+                    showMessage('Error: ' + error, 'danger');
+                })
+                .finally(() => {
+                    imageUploadLabel.textContent = 'Drag & Drop images here or click to upload';
+                    imageUploadInput.value = '';
+                });
+            }
         });
 
         // New helper: update MP4 filename visibility based on selections

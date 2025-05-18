@@ -315,6 +315,36 @@ def upload_combined_files():
     else:
         return jsonify({'status': 'success', 'message': f"Uploaded {len(saved)} file(s) successfully."})
 
+@app.route('/upload_image', methods=['POST'])
+def upload_image():
+    """Handle upload of image files to PICTURES_DIR for Select Image for Video section"""
+    if 'files' not in request.files and not request.files:
+        files = request.files.getlist('files')
+    else:
+        files = request.files.getlist('files')
+    if not files:
+        return jsonify({'status': 'error', 'message': 'No files uploaded.'})
+    saved = []
+    errors = []
+    valid_exts = ('.png', '.jpg', '.jpeg', '.gif')
+    for file in files:
+        filename = secure_filename(file.filename)
+        if not filename.lower().endswith(valid_exts):
+            errors.append(f"Invalid file type: {filename}")
+            continue
+        save_path = os.path.join(PICTURES_DIR, filename)
+        try:
+            file.save(save_path)
+            saved.append(filename)
+        except Exception as e:
+            errors.append(f"Error saving {filename}: {str(e)}")
+    if errors and not saved:
+        return jsonify({'status': 'error', 'message': '; '.join(errors)})
+    elif errors:
+        return jsonify({'status': 'success', 'message': f"Some images uploaded: {', '.join(saved)}. Errors: {'; '.join(errors)}"})
+    else:
+        return jsonify({'status': 'success', 'message': f"Uploaded {len(saved)} image(s) successfully."})
+
 if __name__ == '__main__':
     # Ensure output directory exists
     os.makedirs(OUTPUT_DIR, exist_ok=True)
