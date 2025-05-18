@@ -124,9 +124,10 @@
             }
             /* Improved contrast for selected file items in night mode */
             #combined-file-list .file-item.selected,
-            #file-list .file-item.selected {
-                background-color: #444;
-                color: #ffffff;
+            #file-list .file-item.selected,
+            #video-list .file-item.selected {
+                background-color: #222 !important;
+                color: #fff !important;
             }
             /* Make textarea darker in night mode */
             textarea.form-control {
@@ -404,6 +405,7 @@
                                 <input type="text" id="mp4-filename" class="form-control form-control-sm" placeholder="MP4 filename (no ext)">
                             </div>
                             <button id="create-video-btn" class="btn btn-sm btn-primary ms-2">Create MP4</button>
+                            <button id="delete-video-btn" class="btn btn-sm btn-danger ms-2" disabled>Delete</button>
                         </div>
                     </div>
                     <div class="card-body">
@@ -896,6 +898,23 @@
                             item.className = 'file-item';
                             item.dataset.filename = file;
 
+                            // Add checkbox for delete
+                            const checkbox = document.createElement('input');
+                            checkbox.type = 'checkbox';
+                            checkbox.className = 'form-check-input me-2';
+                            checkbox.addEventListener('change', function() {
+                                updateVideoSelection(checkbox, item);
+                            });
+                            item.appendChild(checkbox);
+
+                            // Make line clickable for selection (checkbox only)
+                            item.addEventListener('click', function(e) {
+                                if (["INPUT", "VIDEO", "BUTTON"].indexOf(e.target.tagName) === -1) {
+                                    checkbox.checked = !checkbox.checked;
+                                    updateVideoSelection(checkbox, item);
+                                }
+                            });
+
                             const fileInfo = document.createElement('div');
                             fileInfo.innerHTML = `<strong>${file}</strong>`;
                             item.appendChild(fileInfo);
@@ -903,8 +922,7 @@
                             const video = document.createElement('video');
                             video.controls = true;
                             video.src = `/videos/${file}`;
-                            // Apply the same pattern as audio players
-                            video.className = 'audio-player ms-2'; // Use audio-player class for consistent styling
+                            video.className = 'audio-player ms-2';
                             item.appendChild(video);
 
                             videoList.appendChild(item);
@@ -912,10 +930,49 @@
                     } else {
                         videoList.innerHTML = '<p>No videos available</p>';
                     }
+                    document.getElementById('delete-video-btn').disabled = true;
                 })
                 .catch(error => {
                     showMessage('Error loading videos: ' + error, 'danger');
                 });
+        }
+
+        function updateVideoSelection(checkbox, fileItem) {
+            let fileItems = Array.from(document.querySelectorAll('#video-list .file-item'));
+            const selectedCount = fileItems.filter(item => item.querySelector('input[type="checkbox"]').checked).length;
+            document.getElementById('delete-video-btn').disabled = selectedCount === 0;
+            checkbox.checked ? fileItem.classList.add('selected') : fileItem.classList.remove('selected');
+        }
+
+        document.getElementById('delete-video-btn').addEventListener('click', deleteVideos);
+
+        function deleteVideos() {
+            let fileItems = Array.from(document.querySelectorAll('#video-list .file-item'));
+            let selectedFiles = fileItems.filter(item => item.querySelector('input[type="checkbox"]').checked).map(item => item.dataset.filename);
+            if (selectedFiles.length === 0) {
+                showMessage('Please select at least one video to delete', 'warning');
+                return;
+            }
+            if (!confirm('Are you sure you want to delete the selected video(s)? This action cannot be undone.')) {
+                return;
+            }
+            fetch('/delete_videos', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ files: selectedFiles })
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.status === 'success') {
+                    showMessage(data.message, 'success');
+                    loadVideos();
+                } else {
+                    showMessage(data.message, 'danger');
+                }
+            })
+            .catch(error => {
+                showMessage('Error: ' + error, 'danger');
+            });
         }
 
        function combineFiles() {

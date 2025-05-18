@@ -258,6 +258,33 @@ def delete_combined_files():
         return jsonify({'status': 'error', 'message': '; '.join(errors), 'deleted': deleted})
     return jsonify({'status': 'success', 'message': f"Deleted {len(deleted)} file(s)", 'deleted': deleted})
 
+@app.route('/delete_videos', methods=['POST'])
+def delete_videos():
+    """Delete selected video files from the work directory"""
+    data = request.get_json()
+    files = data.get('files', [])
+    deleted = []
+    errors = []
+    for filename in files:
+        if not filename.endswith('.mp4'):
+            errors.append(f"Invalid file type: {filename}")
+            continue
+        file_path = os.path.join(WORKDIR, filename)
+        if os.path.isfile(file_path):
+            try:
+                os.remove(file_path)
+                deleted.append(filename)
+            except Exception as e:
+                errors.append(f"Error deleting {filename}: {str(e)}")
+        else:
+            errors.append(f"File not found: {filename}")
+    if errors and not deleted:
+        return jsonify({'status': 'error', 'message': '; '.join(errors)})
+    elif errors:
+        return jsonify({'status': 'success', 'message': f"Some videos deleted: {', '.join(deleted)}. Errors: {'; '.join(errors)}"})
+    else:
+        return jsonify({'status': 'success', 'message': f"Deleted {len(deleted)} video(s) successfully."})
+
 @app.route('/upload_combined_files', methods=['POST'])
 def upload_combined_files():
     """Handle upload of MP3/WAV files to WORKDIR for Combined Audio Files section"""
