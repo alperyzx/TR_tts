@@ -56,10 +56,15 @@ def process_text():
 
     return jsonify({'status': 'success', 'message': 'Text processed successfully'})
 
+
 @app.route('/list_files')
 def list_files():
-    """List all MP3 files in the output directory"""
-    files = [f for f in os.listdir(OUTPUT_DIR) if f.endswith('.mp3')]
+    """List all audio files in the TTS output directory sorted by timestamp"""
+    files = [f for f in os.listdir(OUTPUT_DIR) if f.endswith(('.mp3', '.wav'))]
+
+    # Sort by Unix timestamp filename (chronological order)
+    files.sort(key=lambda x: float(os.path.splitext(x)[0]))
+
     return jsonify({'files': files})
 
 @app.route('/list_combined_files')

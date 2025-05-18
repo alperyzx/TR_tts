@@ -584,41 +584,63 @@
                 });
         }
 
-        function combineFiles() {
-            let sortedFiles = Array.from(document.querySelectorAll('#file-list .file-item'))
-                .filter(item => item.querySelector('input[type="checkbox"]').checked)
-                .map(item => item.dataset.filename);
+       function combineFiles() {
+           const combineBtn = document.getElementById('combine-btn');
+           const originalText = combineBtn.innerHTML;
 
-            if (sortedFiles.length < 2) {
-                showMessage('Please select at least two files to combine', 'warning');
-                return;
-            }
-            const combinedBasename = document.getElementById('combined-basename').value.trim();
-            if (!combinedBasename) {
-                showMessage('Please provide a basename for the combined file', 'warning');
-                return;
-            }
+           // Show loading state
+           combineBtn.disabled = true;
+           combineBtn.innerHTML = '<span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span> Combining...';
 
-            fetch('/combine', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json'
-                },
-                body: JSON.stringify({ sorted_files: sortedFiles, basename: combinedBasename })
-            })
-            .then(response => response.json())
-            .then(data => {
-                if (data.status === 'success') {
-                    showMessage(data.message + ': ' + data.output_file, 'success');
-                    loadCombinedFiles();  // refresh Combined Audio Files
-                } else {
-                    showMessage(data.message, 'danger');
-                }
-            })
-            .catch(error => {
-                showMessage('Error: ' + error, 'danger');
-            });
-        }
+           let sortedFiles = Array.from(document.querySelectorAll('#file-list .file-item'))
+               .filter(item => item.querySelector('input[type="checkbox"]').checked)
+               .map(item => item.dataset.filename);
+
+           if (sortedFiles.length < 2) {
+               showMessage('Please select at least two files to combine', 'warning');
+               // Reset button state
+               combineBtn.disabled = false;
+               combineBtn.innerHTML = originalText;
+               return;
+           }
+
+           const combinedBasename = document.getElementById('combined-basename').value.trim();
+           if (!combinedBasename) {
+               showMessage('Please provide a basename for the combined file', 'warning');
+               // Reset button state
+               combineBtn.disabled = false;
+               combineBtn.innerHTML = originalText;
+               return;
+           }
+
+           fetch('/combine', {
+               method: 'POST',
+               headers: {
+                   'Content-Type': 'application/json'
+               },
+               body: JSON.stringify({ sorted_files: sortedFiles, basename: combinedBasename })
+           })
+           .then(response => response.json())
+           .then(data => {
+               // Reset button state
+               combineBtn.disabled = false;
+               combineBtn.innerHTML = originalText;
+
+               if (data.status === 'success') {
+                   showMessage(data.message + ': ' + data.output_file, 'success');
+                   loadCombinedFiles();  // refresh Combined Audio Files
+               } else {
+                   showMessage(data.message, 'danger');
+               }
+           })
+           .catch(error => {
+               // Reset button state
+               combineBtn.disabled = false;
+               combineBtn.innerHTML = originalText;
+
+               showMessage('Error: ' + error, 'danger');
+           });
+       }
 
         function createVideo() {
             const selectedAudioRadio = document.querySelector('input[name="combined_mp3"]:checked');
