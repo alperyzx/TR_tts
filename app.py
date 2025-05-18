@@ -144,6 +144,37 @@ def combine_files():
         return jsonify({'status': 'error', 'message': f'Error combining files: {str(e)}'})
 
 
+@app.route('/combine_combined_files', methods=['POST'])
+def combine_combined_files():
+    """Combine selected files in WORKDIR and save the result in WORKDIR"""
+    data = request.get_json()
+    sorted_files = data.get('sorted_files', [])
+    basename = data.get('basename', '')
+
+    if len(sorted_files) < 2:
+        return jsonify({'status': 'error', 'message': 'At least two files required'})
+    if not basename:
+        return jsonify({'status': 'error', 'message': 'Basename is required'})
+
+    # Determine output format based on majority of input files
+    mp3_count = sum(1 for f in sorted_files if f.lower().endswith('.mp3'))
+    wav_count = sum(1 for f in sorted_files if f.lower().endswith('.wav'))
+    output_format = 'mp3'  # if mp3_count >= wav_count else 'wav'
+
+    try:
+        combined = AudioSegment.empty()
+        for file in sorted_files:
+            file_path = os.path.join(WORKDIR, file)
+            segment = AudioSegment.from_file(file_path)
+            combined += segment
+        output_file = f"{basename}.{output_format}"
+        output_path = os.path.join(WORKDIR, output_file)
+        combined.export(output_path, format=output_format)
+        return jsonify({'status': 'success', 'message': 'Files combined successfully', 'output_file': output_file})
+    except Exception as e:
+        return jsonify({'status': 'error', 'message': f'Error combining files: {str(e)}'})
+
+
 @app.route('/create_video', methods=['POST'])
 def create_video_route():
     """Create an MP4 file using a selected combined mp3/wav file and a selected image"""

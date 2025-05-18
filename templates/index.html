@@ -221,6 +221,12 @@
                 background-color: #0d6efd !important;
                 color: #fff !important;
             }
+            /* Night mode for combine-combined-basename input field */
+            #combine-combined-basename {
+                background-color: #333;
+                color: #e0e0e0;
+                border-color: #555;
+            }
         }
 
         /* Make video players align to the right like audio players */
@@ -311,6 +317,7 @@
                         <h5 class="m-0">Combined Audio Files</h5>
                         <div>
                             <button id="refresh-combined-btn" class="btn btn-sm btn-outline-secondary"><i class="bi bi-arrow-clockwise"></i> Refresh</button>
+                            <button id="combine-combined-btn" class="btn btn-sm btn-success ms-2" disabled>Combine Selected</button>
                             <button id="delete-combined-btn" class="btn btn-sm btn-danger ms-2" disabled>Delete</button>
                         </div>
                     </div>
@@ -319,6 +326,9 @@
                         <div id="combined-upload-container" class="mb-3 p-3 border border-2 border-primary rounded bg-light text-center" style="cursor:pointer;">
                             <span id="combined-upload-label">Drag & Drop MP3/WAV files here or click to upload</span>
                             <input type="file" id="combined-upload-input" accept=".mp3,.wav" multiple style="display:none;">
+                        </div>
+                        <div class="mb-3" id="combine-combined-basename-container" style="display: none;">
+                            <input type="text" id="combine-combined-basename" class="form-control" placeholder="Enter output file name (without extension)">
                         </div>
                         <div id="combined-file-list" class="mb-3">
                             <p>No combined files available</p>
@@ -668,7 +678,45 @@
             let fileItems = Array.from(document.querySelectorAll('#combined-file-list .file-item'));
             const selectedCount = fileItems.filter(item => item.querySelector('input[type="checkbox"]').checked).length;
             document.getElementById('delete-combined-btn').disabled = selectedCount === 0;
+            document.getElementById('combine-combined-btn').disabled = selectedCount < 2;
+            document.getElementById('combine-combined-basename-container').style.display = selectedCount >= 2 ? 'block' : 'none';
             checkbox.checked ? fileItem.classList.add('selected') : fileItem.classList.remove('selected');
+        }
+
+        document.getElementById('combine-combined-btn').addEventListener('click', combineCombinedFiles);
+
+        function combineCombinedFiles() {
+            let fileItems = Array.from(document.querySelectorAll('#combined-file-list .file-item'));
+            let selectedFiles = fileItems.filter(item => item.querySelector('input[type="checkbox"]').checked).map(item => item.dataset.filename);
+            if (selectedFiles.length < 2) {
+                showMessage('Please select at least two files to combine', 'warning');
+                return;
+            }
+            const basename = document.getElementById('combine-combined-basename').value.trim();
+            if (!basename) {
+                showMessage('Please provide a basename for the combined file', 'warning');
+                return;
+            }
+            document.getElementById('combine-combined-btn').disabled = true;
+            fetch('/combine_combined_files', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ sorted_files: selectedFiles, basename: basename })
+            })
+            .then(response => response.json())
+            .then(data => {
+                document.getElementById('combine-combined-btn').disabled = false;
+                if (data.status === 'success') {
+                    showMessage(data.message + ': ' + data.output_file, 'success');
+                    loadCombinedFiles();
+                } else {
+                    showMessage(data.message, 'danger');
+                }
+            })
+            .catch(error => {
+                document.getElementById('combine-combined-btn').disabled = false;
+                showMessage('Error: ' + error, 'danger');
+            });
         }
 
         document.getElementById('delete-combined-btn').addEventListener('click', deleteCombinedFiles);
