@@ -21,24 +21,29 @@
             border-radius: 4px;
             background-color: #f1f8ff;
             display: flex;
-            justify-content: space-between;
             align-items: center;
+            gap: 10px;
         }
         .file-item.selected {
             background-color: #d1e7ff;
         }
         .audio-player {
-            width: 100%;
+            width: 50%;
+            margin-left: auto;
         }
         /* New: force equal length for combined audio players */
         #combined-file-list .audio-player {
-            width: 300px;
+            width: 50%;
+            margin:-left: auto;
         }
         /* New styles: align filename to the left and fill the space */
+        #file-list .file-item div:nth-child(2),
         #combined-file-list .file-item div:nth-child(2) {
             flex: 1;
-            text-align: left;
-            margin-left: 8px;
+            max-width: 45%;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
         }
         #loading {
             display: none;
@@ -432,9 +437,9 @@
                                 }
                             });
 
+                            // Display just the filename without the format badge
                             const fileInfo = document.createElement('div');
-                            const fileExt = file.split('.').pop().toLowerCase();
-                            fileInfo.innerHTML = `<strong>${file}</strong> <span class="file-type-badge">${fileExt}</span>`;
+                            fileInfo.innerHTML = `<strong>${file}</strong>`;
                             fileItem.appendChild(fileInfo);
 
                             const audio = document.createElement('audio');
@@ -471,10 +476,9 @@
                             radio.addEventListener('change', updateMP4FieldVisibility);
                             fileItem.appendChild(radio);
 
-                            // Display filename with file type badge
+                            // Display just the filename without additional format badge
                             const fileInfo = document.createElement('div');
-                            const fileExt = file.split('.').pop().toLowerCase();
-                            fileInfo.innerHTML = `<strong>${file}</strong> <span class="file-type-badge">${fileExt}</span>`;
+                            fileInfo.innerHTML = `<strong>${file}</strong>`;
                             fileItem.appendChild(fileInfo);
 
                             const audio = document.createElement('audio');
@@ -483,7 +487,7 @@
                             audio.src = `/combined_audio/${file}`;
                             fileItem.appendChild(audio);
 
-                            // New: make entire file item clickable to select it
+                            // Make entire file item clickable to select it
                             fileItem.addEventListener('click', function(e) {
                                 if (e.target.tagName !== 'INPUT') {
                                     document.querySelectorAll('#combined-file-list .file-item')
