@@ -60,6 +60,8 @@
         #image-list .thumbnail {
             flex: 1 1 calc(25% - 10px);
             max-width: calc(25% - 10px);
+            aspect-ratio: 1 / 1; /* Added for square thumbnails */
+            overflow: hidden;    /* Added to prevent content spill */
         }
         .thumbnail {
             position: relative;
@@ -75,8 +77,8 @@
         .thumbnail img {
             border: 2px solid transparent;
             transition: border-color 0.3s;
-            width: 150px;
-            height: 150px;
+            width: 100%; /* Changed from 150px to fill container */
+            height: 100%; /* Changed from 150px to fill container */
             object-fit: cover;
         }
         .thumbnail:hover img {
