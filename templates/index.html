@@ -817,7 +817,13 @@
             }
             const basename = document.getElementById('combine-combined-basename').value.trim();
             if (!basename) {
-                showMessage('Please provide a name for the combined file', 'warning');
+                            showMessage('Please provide a name for the combined file', 'warning');
+                const basenameInput = document.getElementById('combine-combined-basename');
+                basenameInput.focus();
+                basenameInput.classList.add('is-invalid');
+                setTimeout(() => {
+                    basenameInput.classList.remove('is-invalid');
+                }, 3000); // Remove highlight after 3 seconds
                 return;
             }
             combineCombinedBtn.disabled = true;
@@ -1082,7 +1088,13 @@
 
            const combinedBasename = document.getElementById('combined-basename').value.trim();
            if (!combinedBasename) {
-               showMessage('Please provide a basename for the combined file', 'warning');
+               showMessage('Please provide a name for the combined file', 'warning');
+               const basenameInput = document.getElementById('combined-basename');
+               basenameInput.focus();
+               basenameInput.classList.add('is-invalid');
+               setTimeout(() => {
+                   basenameInput.classList.remove('is-invalid');
+               }, 3000); // Remove highlight after 3 seconds
                // Reset button state
                combineBtn.disabled = false;
                combineBtn.innerHTML = originalText;
@@ -1158,6 +1170,12 @@
             const videoBasename = document.getElementById('mp4-filename').value.trim();
             if (!videoBasename) {
                 showMessage('Please provide a filename for the MP4 output', 'warning');
+                const videoBasenameInput = document.getElementById('mp4-filename');
+                videoBasenameInput.focus();
+                videoBasenameInput.classList.add('is-invalid');
+                setTimeout(() => {
+                    videoBasenameInput.classList.remove('is-invalid');
+                }, 3000); // Remove highlight after 3 seconds
                 createVideoBtn.disabled = false;
                 createVideoBtn.innerHTML = originalText;
                 return;
