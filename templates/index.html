@@ -39,6 +39,16 @@
             width: 50%;
             margin-left: auto;
         }
+
+        /* Day mode specific styles for audio player controls */
+        audio.audio-player {
+            border-radius: 5px;        /* Rounded corners for the background */
+            padding: 3px;              /* Small padding if background shows around controls */
+            accent-color: #0d6efd;     /* Controls like sliders use theme color (Bootstrap primary) */
+            color-scheme: light;       /* Hint for light UI controls */
+            filter: invert(1) hue-rotate(180deg) brightness(0.95) contrast(1.05); /* Attempt to lighten dark native controls */
+        }
+
         /* New styles: align filename to the left and fill the space */
         #file-list .file-item div:nth-child(2),
         #combined-file-list .file-item div:nth-child(2) {
@@ -127,6 +137,15 @@
             #file-list .file-item div {
                 color: #e0e0e0;
             }
+
+            /* Dark mode specific styles for audio player controls */
+            audio.audio-player {
+                background-color: #1e1e1e; /* Match .file-item background in dark mode */
+                accent-color: #6ea8fe;     /* Lighter blue for sliders in dark mode */
+                color-scheme: dark;        /* Hint for dark UI controls */
+                filter: none;              /* Ensure no filter in dark mode */
+            }
+
             /* Improved contrast for selected file items in night mode */
             #combined-file-list .file-item.selected,
             #file-list .file-item.selected,
