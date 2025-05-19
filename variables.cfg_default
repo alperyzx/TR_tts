@@ -1,6 +1,7 @@
 # set your own variables here and rename this file to variables.cfg
 [DEFAULT]
 workdir = d:/Projects/TR_tts
+pictures = ${workdir}/pictures
 tts_output_dir = ${workdir}/output
 #mp3 parameters
 album_artist = unknown
