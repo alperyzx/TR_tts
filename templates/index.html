@@ -355,35 +355,41 @@
                 <!-- New Combined Files Card -->
                 <div class="card mt-4">
                     <div class="card-header d-flex justify-content-between align-items-center">
-                        <h5 class="m-0">Combined Audio Files</h5>
+                        <h5 class="m-0">
+                            <a data-bs-toggle="collapse" href="#combined-audio-collapse" role="button" aria-expanded="true" aria-controls="combined-audio-collapse" class="text-decoration-none text-dark">
+                                Combined Audio Files
+                            </a>
+                        </h5>
                         <div>
                             <button id="refresh-combined-btn" class="btn btn-sm btn-outline-secondary"><i class="bi bi-arrow-clockwise"></i> Refresh</button>
                             <button id="combine-combined-btn" class="btn btn-sm btn-success ms-2" disabled>Combine</button>
                             <button id="delete-combined-btn" class="btn btn-sm btn-danger ms-2" disabled>Delete</button>
                         </div>
                     </div>
-                    <div class="card-body">
-                        <!-- Drag and Drop Upload Area -->
-                        <div id="combined-upload-container" class="mb-3 p-3 border border-2 border-primary rounded bg-light text-center" style="cursor:pointer;">
-                            <span id="combined-upload-label">Drag & Drop MP3/WAV files here or click to upload</span>
-                            <input type="file" id="combined-upload-input" accept=".mp3,.wav" multiple style="display:none;">
-                        </div>
-                        <div class="mb-3" id="combine-combined-basename-container" style="display: none;">
-                            <input type="text" id="combine-combined-basename" class="form-control" placeholder="Enter output file name (without extension)">
-                        </div>
-                        <div id="combined-file-list" class="mb-3">
-                            <p>No combined files available</p>
+                    <div id="combined-audio-collapse" class="collapse show">
+                        <div class="card-body">
+                            <!-- Drag and Drop Upload Area -->
+                            <div id="combined-upload-container" class="mb-3 p-3 border border-2 border-primary rounded bg-light text-center" style="cursor:pointer;">
+                                <span id="combined-upload-label">Drag & Drop MP3/WAV files here or click to upload</span>
+                                <input type="file" id="combined-upload-input" accept=".mp3,.wav" multiple style="display:none;">
+                            </div>
+                            <div class="mb-3" id="combine-combined-basename-container" style="display: none;">
+                                <input type="text" id="combine-combined-basename" class="form-control" placeholder="Enter output file name (without extension)">
+                            </div>
+                            <div id="combined-file-list" class="mb-3">
+                                <p>No combined files available</p>
+                            </div>
                         </div>
                     </div>
                 </div>
                 <!-- New Card: Select Image for Video -->
                 <div class="card mt-4">
                     <div class="card-header d-flex justify-content-between align-items-center">
-                        <h4 class="m-0">
+                        <h5 class="m-0">
                             <a data-bs-toggle="collapse" href="#select-image-collapse" role="button" aria-expanded="true" aria-controls="select-image-collapse" class="text-decoration-none text-dark">
                                 Select Image for Video
                             </a>
-                        </h4>
+                        </h5>
                         <div>
                             <button id="refresh-images-btn" class="btn btn-sm btn-outline-secondary" onclick="refreshImages()">
                                 <i class="bi bi-arrow-clockwise"></i> Refresh
@@ -438,7 +444,11 @@
                 <!-- New Card: Generated Videos -->
                 <div class="card mt-4">
                     <div class="card-header d-flex justify-content-between align-items-center">
-                        <h5>Generated Videos</h5>
+                        <h5 class="m-0">
+                            <a data-bs-toggle="collapse" href="#generated-videos-collapse" role="button" aria-expanded="true" aria-controls="generated-videos-collapse" class="text-decoration-none text-dark">
+                                Generated Videos
+                            </a>
+                        </h5>
                         <div>
                             <div id="mp4-filename-container" style="display: none; width: 200px;">
                                 <input type="text" id="mp4-filename" class="form-control form-control-sm" placeholder="MP4 filename (no ext)">
@@ -447,9 +457,11 @@
                             <button id="delete-video-btn" class="btn btn-sm btn-danger ms-2" disabled>Delete</button>
                         </div>
                     </div>
-                    <div class="card-body">
-                        <div id="video-list" class="mb-3">
-                            <p>No videos available</p>
+                    <div id="generated-videos-collapse" class="collapse show">
+                        <div class="card-body">
+                            <div id="video-list" class="mb-3">
+                                <p>No videos available</p>
+                            </div>
                         </div>
                     </div>
                 </div>
