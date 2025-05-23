@@ -473,6 +473,9 @@
     </div>
 
     <script>
+        let fileListSortableInstance = null;
+        let combinedFileListSortableInstance = null;
+
         document.addEventListener('DOMContentLoaded', function() {
             loadFiles(); // previously commented out
             loadCombinedFiles();
@@ -481,13 +484,13 @@
 
             // Initialize sortable list for files
             var fileList = document.getElementById('file-list');
-            Sortable.create(fileList, {
+            fileListSortableInstance = Sortable.create(fileList, { // Assign to higher-scoped variable
                 animation: 150
             });
 
             // New: Initialize sortable for combined-file-list
             var combinedFileList = document.getElementById('combined-file-list');
-            Sortable.create(combinedFileList, {
+            combinedFileListSortableInstance = Sortable.create(combinedFileList, { // Assign to higher-scoped variable
                 animation: 150
             });
 
@@ -710,6 +713,11 @@
         }
 
         function loadFiles() {
+            if (fileListSortableInstance) {
+                fileListSortableInstance.destroy();
+                fileListSortableInstance = null;
+            }
+
             fetch('/list_files')
                 .then(response => response.json())
                 .then(data => {
@@ -812,6 +820,25 @@
 
                             fileList.appendChild(fileItem);
                         });
+                        // Re-initialize SortableJS
+                        fileListSortableInstance = Sortable.create(fileList, {
+                            animation: 150
+                        });
+                    }
+                    // Reset states for the "Generated Audio Files" list
+                    const generatedBasenameInput = document.getElementById('combined-basename');
+                    if (generatedBasenameInput) {
+                        generatedBasenameInput.value = '';
+                    }
+                    const generatedBasenameContainer = document.getElementById('combined-basename-container');
+                    if (generatedBasenameContainer) {
+                        generatedBasenameContainer.style.display = 'none';
+                    }
+                    document.getElementById('combine-btn').disabled = true;
+                    document.getElementById('delete-btn').disabled = true;
+                    const selectAllCheckbox = document.getElementById('select-all');
+                    if (selectAllCheckbox) {
+                        selectAllCheckbox.checked = false;
                     }
                 })
                 .catch(error => {
@@ -820,6 +847,11 @@
         }
 
         function loadCombinedFiles() {
+            if (combinedFileListSortableInstance) {
+                combinedFileListSortableInstance.destroy();
+                combinedFileListSortableInstance = null;
+            }
+
             fetch('/list_combined_files')
                 .then(response => response.json())
                 .then(data => {
@@ -923,9 +955,25 @@
 
                             combinedList.appendChild(fileItem);
                         });
+                        // Re-initialize SortableJS
+                        combinedFileListSortableInstance = Sortable.create(combinedList, {
+                            animation: 150
+                        });
                     } else {
                         combinedList.innerHTML = '<p>No combined files available</p>';
                     }
+                    // Reset button states and clear basename input for "Combined Audio Files" list
+                    document.getElementById('delete-combined-btn').disabled = true;
+                    document.getElementById('combine-combined-btn').disabled = true;
+                    const combineCombinedBasenameContainer = document.getElementById('combine-combined-basename-container');
+                    if (combineCombinedBasenameContainer) {
+                        combineCombinedBasenameContainer.style.display = 'none';
+                    }
+                    const combineCombinedBasenameInput = document.getElementById('combine-combined-basename');
+                    if (combineCombinedBasenameInput) {
+                        combineCombinedBasenameInput.value = ''; // Clear the input field
+                    }
+                    updateCombinedMP4FieldVisibility();
                 })
                 .catch(error => {
                     showMessage('Error loading combined files: ' + error, 'danger');
