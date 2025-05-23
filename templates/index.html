@@ -31,32 +31,30 @@
             background-color: #d1e7ff;
         }
         .audio-player {
-            width: 50%;
-            margin-left: auto;
+            width: 100%; /* Make the audio player fill its container (.audio-player-container) */
         }
-        /* New: force equal length for combined audio players */
-        #combined-file-list .audio-player {
-            width: 50%;
-            margin-left: auto;
+        /* New: Styles for collapsible audio player */
+        .audio-player-container {
+            display: none; /* Hidden by default */
         }
-
-        /* Day mode specific styles for audio player controls */
-        audio.audio-player {
-            border-radius: 5px;        /* Rounded corners for the background */
-            padding: 3px;              /* Small padding if background shows around controls */
-            accent-color: #0d6efd;     /* Controls like sliders use theme color (Bootstrap primary) */
-            color-scheme: light;       /* Hint for light UI controls */
-            filter: invert(1) hue-rotate(180deg) brightness(0.95) contrast(1.05); /* Attempt to lighten dark native controls */
+        .audio-player-container.expanded {
+            display: block; /* Makes it a block-level flex item */
+            width: 40%;    /* It will try to occupy 40% of the file-item's width */
+            margin-left: auto; /* This pushes the container to the right of available space */
+            flex-shrink: 0; /* Prevents this container from shrinking if filename part wants to grow excessively */
         }
+        .toggle-audio {
+            cursor: pointer;
+            margin-left: 10px;
+            font-size: 1.2rem; /* Adjust as needed */
+        }
+        /* End New Styles */
 
         /* New styles: align filename to the left and fill the space */
         #file-list .file-item div:nth-child(2),
         #combined-file-list .file-item div:nth-child(2) {
-            flex: 1;
-            max-width: 45%;
-            overflow: hidden;
-            text-overflow: ellipsis;
-            white-space: nowrap;
+            flex: 1; /* Allow this container to grow and fill available space */
+            min-width: 0; /* Allows the item to shrink below its content size, important for text-overflow on children */
         }
         #loading {
             display: none;
@@ -733,24 +731,84 @@
                             });
                             fileItem.appendChild(checkbox);
 
-                            // New: toggle selection when line is clicked (avoid checkbox, audio, etc.)
-                            fileItem.addEventListener('click', function(e) {
-                                if (['INPUT', 'AUDIO', 'BUTTON'].indexOf(e.target.tagName) === -1) {
-                                    checkbox.checked = !checkbox.checked;
-                                    updateSelection(checkbox, fileItem);
+                            const fileInfoAndToggle = document.createElement('div');
+                            fileInfoAndToggle.style.flex = '1'; // Allow this to grow
+                            fileInfoAndToggle.style.display = 'flex';
+                            fileInfoAndToggle.style.alignItems = 'center';
+                            fileInfoAndToggle.style.justifyContent = 'space-between';
+
+                            const fileInfo = document.createElement('div');
+                            fileInfo.innerHTML = `<strong>${file}</strong>`;
+                            fileInfo.style.overflow = 'hidden';
+                            fileInfo.style.textOverflow = 'ellipsis';
+                            fileInfo.style.whiteSpace = 'nowrap';
+                            fileInfo.style.maxWidth = 'calc(100% - 30px)'; // Adjust based on toggle size
+                            fileInfoAndToggle.appendChild(fileInfo);
+
+                            const toggleButton = document.createElement('i');
+                            toggleButton.className = 'bi bi-play-circle-fill toggle-audio'; // Bootstrap icon
+                            toggleButton.title = 'Play Audio'; // Initial title
+                            fileInfoAndToggle.appendChild(toggleButton);
+
+                            fileItem.appendChild(fileInfoAndToggle);
+
+                            const audioContainer = document.createElement('div');
+                            audioContainer.className = 'audio-player-container'; // Initially hidden by CSS
+
+                            const audio = document.createElement('audio');
+                            audio.className = 'audio-player'; // Removed ms-2, width handled by container
+                            audio.controls = true;
+                            audio.src = `/audio/${file}`;
+                            audioContainer.appendChild(audio);
+                            fileItem.appendChild(audioContainer);
+
+                            // Prevent mousedown on player components from starting a sortable drag or interfering
+                            audioContainer.addEventListener('mousedown', function(e) {
+                                e.stopPropagation();
+                            });
+
+                            toggleButton.addEventListener('click', function(e) {
+                                e.stopPropagation(); // Prevent line click event
+                                if (audio.paused) {
+                                    document.querySelectorAll('audio.audio-player').forEach(otherAudio => {
+                                        if (otherAudio !== audio && !otherAudio.paused) {
+                                            otherAudio.pause(); // This will trigger its 'pause' event
+                                        }
+                                    });
+                                    audio.play(); // This will trigger the 'play' event on this audio element
+                                } else {
+                                    audio.pause(); // This will trigger the 'pause' event
                                 }
                             });
 
-                            // Display just the filename without the format badge
-                            const fileInfo = document.createElement('div');
-                            fileInfo.innerHTML = `<strong>${file}</strong>`;
-                            fileItem.appendChild(fileInfo);
+                            audio.addEventListener('play', function() {
+                                audioContainer.classList.add('expanded');
+                                toggleButton.style.display = 'none'; // Hide the icon
+                            });
 
-                            const audio = document.createElement('audio');
-                            audio.className = 'audio-player ms-2';
-                            audio.controls = true;
-                            audio.src = `/audio/${file}`;
-                            fileItem.appendChild(audio);
+                            audio.addEventListener('pause', function() {
+                                audioContainer.classList.remove('expanded');
+                                toggleButton.classList.remove('bi-pause-circle-fill'); // Ensure it's play icon if it was ever set to pause
+                                toggleButton.classList.add('bi-play-circle-fill');
+                                toggleButton.title = 'Play Audio';
+                                toggleButton.style.display = 'inline-block'; // Show the icon
+                                if (audio.ended) {
+                                    audio.currentTime = 0; // Reset for next play if ended naturally
+                                }
+                            });
+
+                            // REVISED fileItem click listener
+                            fileItem.addEventListener('click', function(e) {
+                                // Do not toggle checkbox if the click is on the checkbox itself,
+                                // or within the audio player container, or on the toggle icon.
+                                if (e.target === checkbox ||
+                                    audioContainer.contains(e.target) ||
+                                    toggleButton === e.target) {
+                                    return; // Let these elements handle their own events
+                                }
+                                checkbox.checked = !checkbox.checked;
+                                updateSelection(checkbox, fileItem);
+                            });
 
                             fileList.appendChild(fileItem);
                         });
@@ -773,7 +831,6 @@
                             fileItem.className = 'file-item';
                             fileItem.dataset.filename = file;
 
-                            // Only checkbox for all actions
                             const checkbox = document.createElement('input');
                             checkbox.type = 'checkbox';
                             checkbox.className = 'form-check-input me-2';
@@ -784,42 +841,97 @@
                             });
                             fileItem.appendChild(checkbox);
 
-                            // Make line clickable for selection (checkbox only)
-                            fileItem.addEventListener('click', function(e) {
-                                if (['INPUT', 'AUDIO', 'BUTTON'].indexOf(e.target.tagName) === -1) {
-                                    checkbox.checked = !checkbox.checked;
-                                    updateCombinedSelection(checkbox, fileItem);
-                                    updateCombinedMP4FieldVisibility();
-                                }
-                            });
+                            const fileInfoAndToggle = document.createElement('div');
+                            fileInfoAndToggle.style.flex = '1';
+                            fileInfoAndToggle.style.display = 'flex';
+                            fileInfoAndToggle.style.alignItems = 'center';
+                            fileInfoAndToggle.style.justifyContent = 'space-between';
 
                             const fileInfo = document.createElement('div');
                             fileInfo.innerHTML = `<strong>${file}</strong>`;
-                            fileItem.appendChild(fileInfo);
+                            fileInfo.style.overflow = 'hidden';
+                            fileInfo.style.textOverflow = 'ellipsis';
+                            fileInfo.style.whiteSpace = 'nowrap';
+                            fileInfo.style.maxWidth = 'calc(100% - 30px)';
+                            fileInfoAndToggle.appendChild(fileInfo);
+
+                            const toggleButton = document.createElement('i');
+                            toggleButton.className = 'bi bi-play-circle-fill toggle-audio';
+                            toggleButton.title = 'Play Audio'; // Initial title
+                            fileInfoAndToggle.appendChild(toggleButton);
+
+                            fileItem.appendChild(fileInfoAndToggle);
+
+                            const audioContainer = document.createElement('div');
+                            audioContainer.className = 'audio-player-container';
 
                             const audio = document.createElement('audio');
-                            audio.className = 'audio-player ms-2';
+                            audio.className = 'audio-player';
                             audio.controls = true;
                             audio.src = `/combined_audio/${file}`;
-                            fileItem.appendChild(audio);
+                            audioContainer.appendChild(audio);
+                            fileItem.appendChild(audioContainer);
+
+                            // Prevent mousedown on player components from starting a sortable drag or interfering
+                            audioContainer.addEventListener('mousedown', function(e) {
+                                e.stopPropagation();
+                            });
+
+                            toggleButton.addEventListener('click', function(e) {
+                                e.stopPropagation();
+                                if (audio.paused) {
+                                    document.querySelectorAll('audio.audio-player').forEach(otherAudio => {
+                                        if (otherAudio !== audio && !otherAudio.paused) {
+                                            otherAudio.pause();
+                                        }
+                                    });
+                                    audio.play();
+                                } else {
+                                    audio.pause();
+                                }
+                            });
+
+                            audio.addEventListener('play', function() {
+                                audioContainer.classList.add('expanded');
+                                toggleButton.style.display = 'none'; // Hide the icon
+                            });
+
+                            audio.addEventListener('pause', function() {
+                                audioContainer.classList.remove('expanded');
+                                toggleButton.classList.remove('bi-pause-circle-fill'); // Ensure it's play icon if it was ever set to pause
+                                toggleButton.classList.add('bi-play-circle-fill');
+                                toggleButton.title = 'Play Audio';
+                                toggleButton.style.display = 'inline-block'; // Show the icon
+                                if (audio.ended) {
+                                    audio.currentTime = 0;
+                                }
+                            });
+
+                            // REVISED fileItem click listener
+                            fileItem.addEventListener('click', function(e) {
+                                // Do not toggle checkbox if the click is on the checkbox itself,
+                                // or within the audio player container, or on the toggle icon.
+                                if (e.target === checkbox ||
+                                    audioContainer.contains(e.target) ||
+                                    toggleButton === e.target) {
+                                    return; // Let these elements handle their own events
+                                }
+                                checkbox.checked = !checkbox.checked;
+                                updateCombinedSelection(checkbox, fileItem);
+                                updateCombinedMP4FieldVisibility();
+                            });
 
                             combinedList.appendChild(fileItem);
                         });
                     } else {
                         combinedList.innerHTML = '<p>No combined files available</p>';
                     }
-                    // Reset delete button state
-                    document.getElementById('delete-combined-btn').disabled = true;
-                    document.getElementById('combine-combined-btn').disabled = true;
-                    document.getElementById('combine-combined-basename-container').style.display = 'none';
-                    updateCombinedMP4FieldVisibility();
                 })
                 .catch(error => {
                     showMessage('Error loading combined files: ' + error, 'danger');
                 });
         }
 
-        // Helper for MP4 field visibility with checkboxes
         function updateCombinedMP4FieldVisibility() {
             const checked = document.querySelectorAll('#combined-file-list .file-item input[type="checkbox"]:checked');
             const imageSelected = document.querySelector('input[name="selected_image"]:checked');
@@ -848,7 +960,7 @@
             }
             const basename = document.getElementById('combine-combined-basename').value.trim();
             if (!basename) {
-                            showMessage('Please provide a name for the combined file', 'warning');
+                showMessage('Please provide a name for the combined file', 'warning');
                 const basenameInput = document.getElementById('combine-combined-basename');
                 basenameInput.focus();
                 basenameInput.classList.add('is-invalid');
@@ -940,12 +1052,10 @@
                         imageList.innerHTML = ''; // clear existing items
                         if (data.images && data.images.length > 0) {
                             data.images.forEach(file => {
-                                // Create thumbnail container
                                 const thumb = document.createElement('div');
                                 thumb.className = 'thumbnail';
                                 thumb.dataset.filename = file;
 
-                                // Create radio input
                                 const radio = document.createElement('input');
                                 radio.type = 'radio';
                                 radio.name = 'selected_image';
@@ -953,16 +1063,13 @@
                                 radio.addEventListener('change', updateCombinedMP4FieldVisibility);
                                 thumb.appendChild(radio);
 
-                                // Create image element with filename as tooltip
                                 const img = document.createElement('img');
                                 img.src = `/images/${file}`;
                                 img.title = file;
                                 thumb.appendChild(img);
 
-                                // New: select thumbnail when anywhere in the thumbnail is clicked
                                 thumb.addEventListener('click', function(e) {
                                     if (e.target.tagName !== 'INPUT') {
-                                        // Remove selected class from all thumbnails
                                         document.querySelectorAll('#image-list .thumbnail').forEach(function(item){
                                             item.classList.remove('selected');
                                         });
@@ -987,26 +1094,23 @@
         }
 
         function refreshImages() {
-       const refreshBtn = document.getElementById('refresh-images-btn');
-       const originalText = refreshBtn.innerHTML;
+            const refreshBtn = document.getElementById('refresh-images-btn');
+            const originalText = refreshBtn.innerHTML;
 
-    // Show loading state
-    refreshBtn.disabled = true;
-    refreshBtn.innerHTML = '<span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span> Refreshing...';
+            refreshBtn.disabled = true;
+            refreshBtn.innerHTML = '<span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span> Refreshing...';
 
-    loadImages()
-        .then(() => {
-            // Reset button state
-            refreshBtn.disabled = false;
-            refreshBtn.innerHTML = originalText;
-        })
-        .catch(error => {
-            // Reset button state
-            refreshBtn.disabled = false;
-            refreshBtn.innerHTML = originalText;
-            showMessage('Error refreshing images: ' + error, 'danger');
-        });
-     }
+            loadImages()
+                .then(() => {
+                    refreshBtn.disabled = false;
+                    refreshBtn.innerHTML = originalText;
+                })
+                .catch(error => {
+                    refreshBtn.disabled = false;
+                    refreshBtn.innerHTML = originalText;
+                    showMessage('Error refreshing images: ' + error, 'danger');
+                });
+        }
 
         function loadVideos() {
             fetch('/list_videos')
@@ -1020,7 +1124,6 @@
                             item.className = 'file-item';
                             item.dataset.filename = file;
 
-                            // Add checkbox for delete
                             const checkbox = document.createElement('input');
                             checkbox.type = 'checkbox';
                             checkbox.className = 'form-check-input me-2';
@@ -1029,7 +1132,6 @@
                             });
                             item.appendChild(checkbox);
 
-                            // Make line clickable for selection (checkbox only)
                             item.addEventListener('click', function(e) {
                                 if (["INPUT", "VIDEO", "BUTTON"].indexOf(e.target.tagName) === -1) {
                                     checkbox.checked = !checkbox.checked;
@@ -1097,89 +1199,82 @@
             });
         }
 
-       function combineFiles() {
-           const combineBtn = document.getElementById('combine-btn');
-           const originalText = combineBtn.innerHTML;
+        function combineFiles() {
+            const combineBtn = document.getElementById('combine-btn');
+            const originalText = combineBtn.innerHTML;
 
-           // Show loading state
-           combineBtn.disabled = true;
-           combineBtn.innerHTML = '<span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span> Checking...';
+            combineBtn.disabled = true;
+            combineBtn.innerHTML = '<span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span> Checking...';
 
-           let sortedFiles = Array.from(document.querySelectorAll('#file-list .file-item'))
-               .filter(item => item.querySelector('input[type="checkbox"]').checked)
-               .map(item => item.dataset.filename);
+            let sortedFiles = Array.from(document.querySelectorAll('#file-list .file-item'))
+                .filter(item => item.querySelector('input[type="checkbox"]').checked)
+                .map(item => item.dataset.filename);
 
-           if (sortedFiles.length < 2) {
-               showMessage('Please select at least two files to combine', 'warning');
-               // Reset button state
-               combineBtn.disabled = false;
-               combineBtn.innerHTML = originalText;
-               return;
-           }
+            if (sortedFiles.length < 2) {
+                showMessage('Please select at least two files to combine', 'warning');
+                combineBtn.disabled = false;
+                combineBtn.innerHTML = originalText;
+                return;
+            }
 
-           const combinedBasename = document.getElementById('combined-basename').value.trim();
-           if (!combinedBasename) {
-               showMessage('Please provide a name for the combined file', 'warning');
-               const basenameInput = document.getElementById('combined-basename');
-               basenameInput.focus();
-               basenameInput.classList.add('is-invalid');
-               setTimeout(() => {
-                   basenameInput.classList.remove('is-invalid');
-               }, 3000); // Remove highlight after 3 seconds
-               // Reset button state
-               combineBtn.disabled = false;
-               combineBtn.innerHTML = originalText;
-               return;
-           }
+            const combinedBasename = document.getElementById('combined-basename').value.trim();
+            if (!combinedBasename) {
+                showMessage('Please provide a name for the combined file', 'warning');
+                const basenameInput = document.getElementById('combined-basename');
+                basenameInput.focus();
+                basenameInput.classList.add('is-invalid');
+                setTimeout(() => {
+                    basenameInput.classList.remove('is-invalid');
+                }, 3000);
+                combineBtn.disabled = false;
+                combineBtn.innerHTML = originalText;
+                return;
+            }
 
-           // Check if file already exists before combining
-           fetch('/list_combined_files')
-               .then(response => response.json())
-               .then(data => {
-                   const exists = data.files && data.files.includes(combinedBasename + '.mp3');
-                   if (exists) {
-                       if (!confirm('A file with this name already exists. Overwrite?')) {
-                           combineBtn.disabled = false;
-                           combineBtn.innerHTML = originalText;
-                           return;
-                       }
-                   }
-                   // Proceed with combine
-                   combineBtn.innerHTML = '<span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span> Combining...';
-                   fetch('/combine', {
-                       method: 'POST',
-                       headers: {
-                           'Content-Type': 'application/json'
-                       },
-                       body: JSON.stringify({ sorted_files: sortedFiles, basename: combinedBasename })
-                   })
-                   .then(response => response.json())
-                   .then(data => {
-                       // Reset button state
-                       combineBtn.disabled = false;
-                       combineBtn.innerHTML = originalText;
+            fetch('/list_combined_files')
+                .then(response => response.json())
+                .then(data => {
+                    const exists = data.files && data.files.includes(combinedBasename + '.mp3');
+                    if (exists) {
+                        if (!confirm('A file with this name already exists. Overwrite?')) {
+                            combineBtn.disabled = false;
+                            combineBtn.innerHTML = originalText;
+                            return;
+                        }
+                    }
+                    combineBtn.innerHTML = '<span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span> Combining...';
+                    fetch('/combine', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json'
+                        },
+                        body: JSON.stringify({ sorted_files: sortedFiles, basename: combinedBasename })
+                    })
+                    .then(response => response.json())
+                    .then(data => {
+                        combineBtn.disabled = false;
+                        combineBtn.innerHTML = originalText;
 
-                       if (data.status === 'success') {
-                           showMessage(data.message + ': ' + data.output_file, 'success');
-                           loadCombinedFiles();  // refresh Combined Audio Files
-                       } else {
-                           showMessage(data.message, 'danger');
-                       }
-                   })
-                   .catch(error => {
-                       // Reset button state
-                       combineBtn.disabled = false;
-                       combineBtn.innerHTML = originalText;
+                        if (data.status === 'success') {
+                            showMessage(data.message + ': ' + data.output_file, 'success');
+                            loadCombinedFiles();
+                        } else {
+                            showMessage(data.message, 'danger');
+                        }
+                    })
+                    .catch(error => {
+                        combineBtn.disabled = false;
+                        combineBtn.innerHTML = originalText;
 
-                       showMessage('Error: ' + error, 'danger');
-                   });
-               })
-               .catch(error => {
-                   showMessage('Error checking existing files: ' + error, 'danger');
-                   combineBtn.disabled = false;
-                   combineBtn.innerHTML = originalText;
-               });
-       }
+                        showMessage('Error: ' + error, 'danger');
+                    });
+                })
+                .catch(error => {
+                    showMessage('Error checking existing files: ' + error, 'danger');
+                    combineBtn.disabled = false;
+                    combineBtn.innerHTML = originalText;
+                });
+        }
 
         function createVideo() {
             const createVideoBtn = document.getElementById('create-video-btn');
@@ -1187,7 +1282,6 @@
             createVideoBtn.disabled = true;
             createVideoBtn.innerHTML = '<span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span> Creating MP4...';
 
-            // Use checkbox selection for audio
             const checked = document.querySelectorAll('#combined-file-list .file-item input[type="checkbox"]:checked');
             const selectedImageRadio = document.querySelector('input[name="selected_image"]:checked');
             if (checked.length !== 1 || !selectedImageRadio) {
@@ -1206,7 +1300,7 @@
                 videoBasenameInput.classList.add('is-invalid');
                 setTimeout(() => {
                     videoBasenameInput.classList.remove('is-invalid');
-                }, 3000); // Remove highlight after 3 seconds
+                }, 3000);
                 createVideoBtn.disabled = false;
                 createVideoBtn.innerHTML = originalText;
                 return;
