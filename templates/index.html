@@ -347,36 +347,40 @@
                         </div>
                     </div>
                 </div>
-                <!-- New Combined Files Card -->
+
+                <!-- Swapped Section 1: Generated Audio Files Card -->
+                <!-- This card was originally in the right column, first item. -->
+                <!-- It's now the second card in the left column, so it gets mt-4. -->
                 <div class="card mt-4">
                     <div class="card-header d-flex justify-content-between align-items-center">
                         <h5 class="m-0">
-                            <a data-bs-toggle="collapse" href="#combined-audio-collapse" role="button" aria-expanded="true" aria-controls="combined-audio-collapse" class="text-decoration-none text-dark">
-                                Combined Audio Files
+                            <a data-bs-toggle="collapse" href="#generated-audio-collapse" role="button" aria-expanded="true" aria-controls="generated-audio-collapse" class="text-decoration-none text-dark">
+                                TTS Output Files
                             </a>
                         </h5>
-                        <div>
-                            <button id="refresh-combined-btn" class="btn btn-sm btn-outline-secondary"><i class="bi bi-arrow-clockwise"></i> Refresh</button>
-                            <button id="combine-combined-btn" class="btn btn-sm btn-success ms-2" disabled>Combine</button>
-                            <button id="delete-combined-btn" class="btn btn-sm btn-danger ms-2" disabled>Delete</button>
+                        <div class="d-flex align-items-center gap-2">
+                            <button id="refresh-btn" class="btn btn-sm btn-outline-secondary flex-shrink-0"><i class="bi bi-arrow-clockwise"></i> Refresh</button>
+                            <button id="combine-btn" class="btn btn-sm btn-success ms-2" disabled>Combine</button>
+                            <button id="delete-btn" class="btn btn-sm btn-danger" disabled>Delete</button>
+                            <label class="form-check d-flex align-items-center ms-2 mb-0 py-0" for="select-all" style="cursor: pointer;" title="Select All">
+                                <input type="checkbox" id="select-all" class="form-check-input">
+                            </label>
                         </div>
                     </div>
-                    <div id="combined-audio-collapse" class="collapse show">
+                    <div id="generated-audio-collapse" class="collapse show">
                         <div class="card-body">
-                            <!-- Drag and Drop Upload Area -->
-                            <div id="combined-upload-container" class="mb-3 p-3 border border-2 border-primary rounded bg-light text-center" style="cursor:pointer;">
-                                <span id="combined-upload-label">Drag & Drop MP3/WAV files here or click to upload</span>
-                                <input type="file" id="combined-upload-input" accept=".mp3,.wav" multiple style="display:none;">
+                            <!-- Removed "Combined File Name (basename)" label and wrapped input in a hidden container -->
+                            <div class="mb-3" id="combined-basename-container" style="display: none;">
+                                <input type="text" id="combined-basename" class="form-control" placeholder="Enter output file name (without extension)">
                             </div>
-                            <div class="mb-3" id="combine-combined-basename-container" style="display: none;">
-                                <input type="text" id="combine-combined-basename" class="form-control" placeholder="Enter output file name (without extension)">
-                            </div>
-                            <div id="combined-file-list" class="mb-3">
-                                <p>No combined files available</p>
+                            <div id="file-list" class="mb-3">
+                                <p>No files available</p>
                             </div>
                         </div>
                     </div>
                 </div>
+                <!-- End of Swapped Section 1 -->
+
                 <!-- New Card: Select Image for Video -->
                 <div class="card mt-4">
                     <div class="card-header d-flex justify-content-between align-items-center">
@@ -408,34 +412,42 @@
 
             <!-- File List Section -->
             <div class="col-md-6">
+
+                <!-- Swapped Section 2: Combined Audio Files Card -->
+                <!-- This card was originally in the left column, second item (with mt-4 and its comment). -->
+                <!-- It's now the first card in the right column, so mt-4 is removed. The comment moves with it. -->
+                <!-- New Combined Files Card -->
                 <div class="card">
                     <div class="card-header d-flex justify-content-between align-items-center">
                         <h5 class="m-0">
-                            <a data-bs-toggle="collapse" href="#generated-audio-collapse" role="button" aria-expanded="true" aria-controls="generated-audio-collapse" class="text-decoration-none text-dark">
-                                Generated Audio Files
+                            <a data-bs-toggle="collapse" href="#combined-audio-collapse" role="button" aria-expanded="true" aria-controls="combined-audio-collapse" class="text-decoration-none text-dark">
+                                Combined Audio Files
                             </a>
                         </h5>
-                        <div class="d-flex align-items-center gap-2">
-                            <button id="refresh-btn" class="btn btn-sm btn-outline-secondary flex-shrink-0"><i class="bi bi-arrow-clockwise"></i> Refresh</button>
-                            <button id="combine-btn" class="btn btn-sm btn-success ms-2" disabled>Combine</button>
-                            <button id="delete-btn" class="btn btn-sm btn-danger" disabled>Delete</button>
-                            <label class="form-check d-flex align-items-center ms-2 mb-0 py-0" for="select-all" style="cursor: pointer;" title="Select All">
-                                <input type="checkbox" id="select-all" class="form-check-input">
-                            </label>
+                        <div>
+                            <button id="refresh-combined-btn" class="btn btn-sm btn-outline-secondary"><i class="bi bi-arrow-clockwise"></i> Refresh</button>
+                            <button id="combine-combined-btn" class="btn btn-sm btn-success ms-2" disabled>Combine</button>
+                            <button id="delete-combined-btn" class="btn btn-sm btn-danger ms-2" disabled>Delete</button>
                         </div>
                     </div>
-                    <div id="generated-audio-collapse" class="collapse show">
+                    <div id="combined-audio-collapse" class="collapse show">
                         <div class="card-body">
-                            <!-- Removed "Combined File Name (basename)" label and wrapped input in a hidden container -->
-                            <div class="mb-3" id="combined-basename-container" style="display: none;">
-                                <input type="text" id="combined-basename" class="form-control" placeholder="Enter output file name (without extension)">
+                            <!-- Drag and Drop Upload Area -->
+                            <div id="combined-upload-container" class="mb-3 p-3 border border-2 border-primary rounded bg-light text-center" style="cursor:pointer;">
+                                <span id="combined-upload-label">Drag & Drop MP3/WAV files here or click to upload</span>
+                                <input type="file" id="combined-upload-input" accept=".mp3,.wav" multiple style="display:none;">
                             </div>
-                            <div id="file-list" class="mb-3">
-                                <p>No files available</p>
+                            <div class="mb-3" id="combine-combined-basename-container" style="display: none;">
+                                <input type="text" id="combine-combined-basename" class="form-control" placeholder="Enter output file name (without extension)">
+                            </div>
+                            <div id="combined-file-list" class="mb-3">
+                                <p>No combined files available</p>
                             </div>
                         </div>
                     </div>
                 </div>
+                <!-- End of Swapped Section 2 -->
+
                 <!-- New Card: Generated Videos -->
                 <div class="card mt-4">
                     <div class="card-header d-flex justify-content-between align-items-center">
