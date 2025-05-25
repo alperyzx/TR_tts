@@ -782,7 +782,7 @@
                             const audio = document.createElement('audio');
                             audio.className = 'audio-player'; // Removed ms-2, width handled by container
                             audio.controls = true;
-                            audio.src = `/audio/${file}`;
+                            audio.src = `/audio/${file}?v=${new Date().getTime()}`; // Added cache-busting
                             audioContainer.appendChild(audio);
                             fileItem.appendChild(audioContainer);
 
@@ -928,7 +928,7 @@
                             const audio = document.createElement('audio');
                             audio.className = 'audio-player';
                             audio.controls = true;
-                            audio.src = `/combined_audio/${file}`;
+                            audio.src = `/combined_audio/${file}?v=${new Date().getTime()}`; // Added cache-busting
                             audioContainer.appendChild(audio);
                             fileItem.appendChild(audioContainer);
 
@@ -1218,7 +1218,7 @@
                             item.appendChild(checkbox);
 
                             item.addEventListener('click', function(e) {
-                                if (["INPUT", "VIDEO", "BUTTON"].indexOf(e.target.tagName) === -1) {
+                                if (["INPUT", "VIDEO", "BUTTON"].indexOf(e.target.tagName) === -1 && !e.target.closest('video')) { // Ensure click isn't on video controls
                                     checkbox.checked = !checkbox.checked;
                                     updateVideoSelection(checkbox, item);
                                 }
@@ -1230,8 +1230,9 @@
 
                             const video = document.createElement('video');
                             video.controls = true;
-                            video.src = `/videos/${file}`;
-                            video.className = 'audio-player ms-2';
+                            video.src = `/videos/${file}?v=${new Date().getTime()}`; // Added cache-busting
+                            video.className = 'audio-player ms-2'; // Existing class, might need review if specific video styling is added
+                            video.addEventListener('click', function(e) { e.stopPropagation(); }); // Prevent click on video from toggling checkbox
                             item.appendChild(video);
 
                             videoList.appendChild(item);
