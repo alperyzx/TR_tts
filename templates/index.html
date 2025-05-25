@@ -326,9 +326,6 @@
                         </h5>
                         <div>
                             <button type="submit" form="text-form" class="btn btn-primary">Process Text</button>
-                            <div id="loading" class="spinner-border spinner-border-sm text-primary ms-2" role="status">
-                                <span class="visually-hidden">Loading...</span>
-                            </div>
                         </div>
                     </div>
                     <div id="input-text-collapse" class="collapse show">
@@ -497,6 +494,9 @@
             document.getElementById('text-form').addEventListener('submit', function(e) {
                 e.preventDefault();
 
+                const processTextBtn = document.querySelector('button[form="text-form"][type="submit"]');
+                const originalProcessTextBtnHTML = processTextBtn.innerHTML;
+
                 const textInput = document.getElementById('text-input').value;
                 const fileInputEl = document.getElementById('file-input');
                 const fileInput = fileInputEl.files[0];
@@ -514,7 +514,8 @@
                     formData.append('file', fileInput);
                 }
 
-                document.getElementById('loading').style.display = 'inline-block';
+                processTextBtn.disabled = true;
+                processTextBtn.innerHTML = '<span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span> Processing...';
 
                 fetch('/process_text', {
                     method: 'POST',
@@ -529,7 +530,8 @@
                     showMessage('Error: ' + error, 'danger');
                 })
                 .finally(() => {
-                    document.getElementById('loading').style.display = 'none';
+                    processTextBtn.disabled = false;
+                    processTextBtn.innerHTML = originalProcessTextBtnHTML;
                     // Clear file input automatically after process_text
                     fileInputEl.value = '';
                 });
