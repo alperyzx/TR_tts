@@ -723,9 +723,9 @@
 
         // New helper: update MP4 filename visibility based on selections
         function updateMP4FieldVisibility() {
-            const combinedSelected = document.querySelector('input[name="combined_mp3"]:checked');
+            const combinedSelectedNodes = document.querySelectorAll('#combined-file-list .file-item input[type="checkbox"]:checked');
             const imageSelected = document.querySelector('input[name="selected_image"]:checked');
-            document.getElementById('mp4-filename-container').style.display = (combinedSelected && imageSelected) ? 'inline-block' : 'none';
+            document.getElementById('mp4-filename-container').style.display = (combinedSelectedNodes.length === 1 && imageSelected) ? 'inline-block' : 'none';
         }
 
         function loadFiles() {
