@@ -12,6 +12,13 @@ echo -e "${GREEN}================================${NC}"
 echo -e "${GREEN}TR_tts Project Runner${NC}"
 echo -e "${GREEN}================================${NC}"
 
+# Activate virtual environment if it exists
+if [ -d ".venv" ]; then
+    echo -e "\n${YELLOW}Activating virtual environment...${NC}"
+    source .venv/bin/activate
+    echo -e "${GREEN}Virtual environment activated.${NC}"
+fi
+
 # Check Python version
 echo -e "\n${YELLOW}Checking Python version...${NC}"
 PYTHON_VERSION=$(python3 --version | awk '{print $2}')
@@ -54,3 +61,4 @@ echo -e "\n${GREEN}Starting TR_tts application...${NC}"
 echo -e "${GREEN}Access the web interface at http://127.0.0.1:5000${NC}"
 echo -e "${YELLOW}Press Ctrl+C to stop the server${NC}\n"
 python app.py
+

@@ -1,31 +1,6 @@
-# install_and_create_requirements.py
-import subprocess
+google-cloud-texttospeech
+pydub
+mutagen
+audioop-lts
+moviepy
 
-# List of packages to be installed and included in requirements.txt
-packages = [
-    "google-cloud-texttospeech",
-    "pydub",
-    "mutagen",
-    "audioop-lts",
-    "moviepy"
-]
-
-# Function to install a package using pip
-def install_package(package):
-    subprocess.run(['pip', 'install', package], check=True)
-
-# Open the requirements.txt file in write mode
-with open('requirements.txt', 'w') as file:
-    for package in packages:
-        # Install the package
-        install_package(package)
-
-        # Get the installed version of the package
-        result = subprocess.run(['pip', 'show', package], capture_output=True, text=True)
-        for line in result.stdout.splitlines():
-            if line.startswith('Version:'):
-                version = line.split()[1]
-                file.write(f"{package}=={version}\n")
-                break
-
-print("Packages installed and requirements.txt file created successfully.")
