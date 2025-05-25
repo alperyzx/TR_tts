@@ -887,6 +887,18 @@
                             fileInfo.style.maxWidth = 'calc(100% - 30px)';
                             fileInfoAndToggle.appendChild(fileInfo);
 
+                            // New: Add context menu to copy filename
+                            fileInfo.addEventListener('contextmenu', function(e) {
+                                e.preventDefault();
+                                const fullFilename = fileItem.dataset.filename;
+                                const basename = fullFilename.includes('.') ? fullFilename.substring(0, fullFilename.lastIndexOf('.')) : fullFilename;
+                                navigator.clipboard.writeText(basename).then(function() {
+                                    showMessage(`Basename "${basename}" copied to clipboard`, 'success');
+                                }).catch(function(error) {
+                                    showMessage('Error copying basename: ' + error, 'danger');
+                                });
+                            });
+
                             const toggleButton = document.createElement('i');
                             toggleButton.className = 'bi bi-play-circle-fill toggle-audio';
                             toggleButton.title = 'Play Audio'; // Initial title
