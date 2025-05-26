@@ -15,7 +15,7 @@ if not exist ".venv" (
         python -m venv .venv
         if %errorlevel% neq 0 (
             echo Failed to create virtual environment. Please create it manually.
-            exit /b 1
+            goto error
         )
         echo Virtual environment created successfully.
     ) else (
@@ -39,7 +39,7 @@ python --version > version.tmp 2>&1
 if %errorlevel% neq 0 (
     echo Error: Could not execute Python. Make sure it is installed and in your PATH.
     del version.tmp 2>nul
-    exit /b 1
+    goto error
 )
 
 set /p PYTHON_VERSION_LINE=<version.tmp
@@ -48,7 +48,7 @@ del version.tmp
 echo %PYTHON_VERSION_LINE% | findstr /r "Python [0-9]" > nul
 if %errorlevel% neq 0 (
     echo Error: Could not determine Python version.
-    exit /b 1
+    goto error
 )
 
 for /f "tokens=2" %%V in ('echo %PYTHON_VERSION_LINE%') do set PYTHON_VERSION=%%V
@@ -62,7 +62,7 @@ for /f "tokens=1,2 delims=." %%a in ("%PYTHON_VERSION%") do (
 
 if "!PYTHON_MAJOR!" LSS "3" (
     echo Error: Python 3.13+ is required.
-    exit /b 1
+    goto error
 )
 if "!PYTHON_MAJOR!"=="3" (
     if "!PYTHON_MINOR!" LSS "13" (
@@ -78,7 +78,7 @@ where ffmpeg >nul 2>nul
 if %errorlevel% neq 0 (
     echo Error: FFmpeg is not installed or not in PATH
     echo Please install FFmpeg from https://github.com/BtbN/FFmpeg-Builds/releases
-    exit /b 1
+    goto error
 )
 echo FFmpeg is installed. OK!
 
@@ -104,7 +104,7 @@ if defined VIRTUAL_ENV (
         pip install -r requirements.txt --no-cache-dir
         if errorlevel 1 (
             echo Error installing dependencies.
-            exit /b 1
+            goto error
         )
     )
 ) else (
@@ -115,7 +115,7 @@ if defined VIRTUAL_ENV (
         pip install -r requirements.txt --user --no-cache-dir
         if errorlevel 1 (
             echo Error installing dependencies.
-            exit /b 1
+            goto error
         )
     )
 )
@@ -133,5 +133,21 @@ echo Access the web interface at http://127.0.0.1:5000
 echo Press Ctrl+C to stop the server
 echo.
 python app.py
+if %errorlevel% neq 0 (
+    echo Error: Application failed to start.
+    goto error
+)
 
+goto end
+
+:error
+echo.
+echo *** ERROR OCCURRED ***
+echo The installation or application has encountered an error.
+echo Please read the error message above.
+echo.
+pause
+exit /b 1
+
+:end
 endlocal
