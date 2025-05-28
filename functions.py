@@ -307,7 +307,7 @@ def repParen(rtext):
     #rtext = re.sub(r'\byön\b\.?', 'yönetmen ', rtext)
     # rtext = re.sub(r'\bder\b\.?', 'derleyen ', rtext)
     rtext = re.sub(r'\bçev\b\.?', 'çeviren ', rtext)
-    rtext = re.sub(r'\bed\b\.?', 'editor ', rtext)
+    # rtext = re.sub(r'\bed\b\.?', 'editor ', rtext)
     rtext = re.sub(r'\byay\b\.?', 'yayınları ', rtext)
     rtext = re.sub(r'\btüik\b\.?', 'türkiye istatistik kurumu', rtext)
     # Find all occurrences of ")."
