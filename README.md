@@ -30,4 +30,5 @@ youtube kanalıma abone olmayı unutmayın, teşekkürler 😊
 
 # Nasıl çalışır
 linux:  paketi indir -->  ./run.sh <br>
-windows:  paketi indir --> python3.13 app.py
+windows:  paketi indir --> setup.bat <br>
+start.bat dosyasını çalıştırın. <br>
