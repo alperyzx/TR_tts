@@ -346,6 +346,12 @@ def upload_image():
         return jsonify({'status': 'success', 'message': f"Uploaded {len(saved)} image(s) successfully."})
 
 if __name__ == '__main__':
+    import argparse
+    parser = argparse.ArgumentParser()
+    parser.add_argument('--host', default='127.0.0.1')
+    parser.add_argument('--port', type=int, default=5000)
+    args = parser.parse_args()
+    
     # Ensure output directory exists
     os.makedirs(OUTPUT_DIR, exist_ok=True)
-    app.run(debug=True)
+    app.run(host=args.host, port=args.port, debug=True)

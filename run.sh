@@ -20,7 +20,8 @@ fi
 
 # Run the application
 echo -e "\n${GREEN}Starting TR_tts application...${NC}"
-echo -e "${GREEN}Access the web interface at http://127.0.0.1:5000${NC}"
+LOCAL_IP=$(hostname -I | awk '{print $1}')
+echo -e "${GREEN}Access the web interface at http://0.0.0.0:8000 or http://$LOCAL_IP:8000${NC}"
 echo -e "${YELLOW}Press Ctrl+C to stop the server${NC}\n"
-python3.13 app.py
+python3.13 app.py --host 0.0.0.0 --port 8000
 
