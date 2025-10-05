@@ -97,4 +97,6 @@ else
     echo -e "${GREEN}variables.cfg created from default. ${NC}"
 fi
 
-echo -e "\n${YELLOW}Define required directories: output pictures ${NC}"
+echo -e "\n${YELLOW}Define required directories: output pictures files/combined_audio files/videos${NC}"
+mkdir -p output pictures files/combined_audio files/videos
+echo -e "${GREEN}Directories created.${NC}"

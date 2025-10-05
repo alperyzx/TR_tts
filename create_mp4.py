@@ -2,7 +2,7 @@ import os
 from moviepy import ImageClip, AudioFileClip
 import configparser
 
-def create_video(image_path=None, audio_path=None, video_basename=None):
+def create_video(image_path=None, audio_path=None, video_basename=None, videos_dir=None):
     # Read variables from the configuration file if paths are not provided
     config = configparser.ConfigParser()
     config.read('variables.cfg', encoding='utf-8')
@@ -20,8 +20,11 @@ def create_video(image_path=None, audio_path=None, video_basename=None):
     if not os.path.isabs(audio_path):
         audio_path = os.path.join(workdir, audio_path)
 
-    # Use the directory of audio_path and a proper base name to construct the output path
-    output_dir = os.path.dirname(audio_path)
+    # Use the videos_dir if provided, otherwise use the directory of audio_path
+    if videos_dir:
+        output_dir = videos_dir
+    else:
+        output_dir = os.path.dirname(audio_path)
     if video_basename:
         base_filename = video_basename
     else:

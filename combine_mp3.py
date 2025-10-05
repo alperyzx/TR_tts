@@ -75,8 +75,8 @@ if __name__ == "__main__":
     album = config['DEFAULT']['album']
     title = config['DEFAULT']['title']
     artist = config['DEFAULT']['artist']
-    workdir = config['DEFAULT']['workdir']
-    output_file = os.path.join(workdir, f"{artist}_{title}.mp3")
+    combined_audio_dir = config['DEFAULT']['combined_audio_dir']
+    output_file = os.path.join(combined_audio_dir, f"{artist}_{title}.mp3")
 
     combine_mp3_files(input_directory, output_file, title, artist, album, album_artist, creator)
     print(f"Output MP3 file: {output_file}")

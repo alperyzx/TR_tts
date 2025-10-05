@@ -1,3 +1,7 @@
 variables.cfg
 __pycache__/
 *.pyc
+files/
+output/
+pictures/
+.venv/

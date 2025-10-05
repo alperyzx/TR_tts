@@ -1,8 +1,10 @@
 # set your own variables here and rename this file to variables.cfg
 [DEFAULT]
 workdir = /home/user/Documents/TR_tts
-pictures = /home/user/Documents/TR_tts/pictures
-tts_output_dir = /home/user/Documents/TR_tts/output
+pictures = /home/user/Documents/TR_tts/files/pictures
+tts_output_dir = /home/user/Documents/TR_tts/files/output
+combined_audio_dir = /home/user/Documents/TR_tts/files/combined_audio
+videos_dir = /home/user/Documents/TR_tts/files/videos
 #mp3 parameters
 album_artist = unknown
 creator = your_name

@@ -436,8 +436,8 @@
                         <div class="card-body">
                             <!-- Drag and Drop Upload Area -->
                             <div id="combined-upload-container" class="mb-3 p-3 border border-2 border-primary rounded bg-light text-center" style="cursor:pointer;">
-                                <span id="combined-upload-label">Drag & Drop MP3/WAV files here or click to upload</span>
-                                <input type="file" id="combined-upload-input" accept=".mp3,.wav" multiple style="display:none;">
+                                <span id="combined-upload-label">Drag & Drop MP3/WAV/M4A files here or click to upload</span>
+                                <input type="file" id="combined-upload-input" accept=".mp3,.wav,.m4a" multiple style="display:none;">
                             </div>
                             <div class="mb-3" id="combine-combined-basename-container" style="display: none;">
                                 <input type="text" id="combine-combined-basename" class="form-control" placeholder="Enter output file name (without extension)">
@@ -621,13 +621,13 @@
                 let valid = false;
                 for (let i = 0; i < files.length; i++) {
                     const file = files[i];
-                    if (file.name.endsWith('.mp3') || file.name.endsWith('.wav')) {
+                    if (file.name.endsWith('.mp3') || file.name.endsWith('.wav') || file.name.endsWith('.m4a')) {
                         formData.append('files', file);
                         valid = true;
                     }
                 }
                 if (!valid) {
-                    showMessage('Only MP3 and WAV files are allowed.', 'warning');
+                    showMessage('Only MP3, WAV, and M4A files are allowed.', 'warning');
                     return;
                 }
                 combinedUploadLabel.textContent = 'Uploading...';
@@ -648,7 +648,7 @@
                     showMessage('Error: ' + error, 'danger');
                 })
                 .finally(() => {
-                    combinedUploadLabel.textContent = 'Drag & Drop MP3/WAV files here or click to upload';
+                    combinedUploadLabel.textContent = 'Drag & Drop MP3/WAV/M4A files here or click to upload';
                     combinedUploadInput.value = '';
                 });
             }
@@ -901,19 +901,92 @@
                             fileInfo.style.textOverflow = 'ellipsis';
                             fileInfo.style.whiteSpace = 'nowrap';
                             fileInfo.style.maxWidth = 'calc(100% - 30px)';
+                            fileInfo.style.cursor = 'context-menu'; // Add context-menu cursor
+                            fileInfo.title = 'Right-click (or Ctrl+click on Mac) to copy filename'; // Add tooltip
                             fileInfoAndToggle.appendChild(fileInfo);
 
                             // New: Add context menu to copy filename
-                            fileInfo.addEventListener('contextmenu', function(e) {
-                                e.preventDefault();
+                            function copyFilenameToClipboard() {
                                 const fullFilename = fileItem.dataset.filename;
                                 const basename = fullFilename.includes('.') ? fullFilename.substring(0, fullFilename.lastIndexOf('.')) : fullFilename;
-                                navigator.clipboard.writeText(basename).then(function() {
-                                    showMessage(`Basename "${basename}" copied to clipboard`, 'success');
-                                }).catch(function(error) {
-                                    showMessage('Error copying basename: ' + error, 'danger');
-                                });
+
+                                // Try modern clipboard API first
+                                if (navigator.clipboard && navigator.clipboard.writeText) {
+                                    navigator.clipboard.writeText(basename).then(function() {
+                                        showMessage(`Basename "${basename}" copied to clipboard`, 'success');
+                                    }).catch(function(error) {
+                                        // Fallback for macOS and other systems where clipboard API fails
+                                        fallbackCopyToClipboard(basename);
+                                    });
+                                } else {
+                                    // Fallback for older browsers
+                                    fallbackCopyToClipboard(basename);
+                                }
+                            }
+
+                            fileInfo.addEventListener('contextmenu', function(e) {
+                                e.preventDefault();
+                                copyFilenameToClipboard();
                             });
+
+                            // Add Ctrl+click as alternative for macOS
+                            fileInfo.addEventListener('click', function(e) {
+                                if (e.ctrlKey || e.metaKey) { // Ctrl+click on Windows/Linux, Cmd+click on Mac
+                                    e.preventDefault();
+                                    e.stopPropagation();
+                                    copyFilenameToClipboard();
+                                }
+                            });
+
+                            function fallbackCopyToClipboard(text) {
+                                // Create a temporary textarea element
+                                const textArea = document.createElement('textarea');
+                                textArea.value = text;
+                                textArea.style.position = 'fixed';
+                                textArea.style.left = '-999999px';
+                                textArea.style.top = '-999999px';
+                                document.body.appendChild(textArea);
+                                textArea.focus();
+                                textArea.select();
+
+                                try {
+                                    const successful = document.execCommand('copy');
+                                    if (successful) {
+                                        showMessage(`Basename "${text}" copied to clipboard`, 'success');
+                                    } else {
+                                        showMessage('Failed to copy basename to clipboard', 'warning');
+                                    }
+                                } catch (error) {
+                                    showMessage('Error copying basename: ' + error.message, 'danger');
+                                }
+
+                                document.body.removeChild(textArea);
+                            }
+
+                            function fallbackCopyToClipboard(text) {
+                                // Create a temporary textarea element
+                                const textArea = document.createElement('textarea');
+                                textArea.value = text;
+                                textArea.style.position = 'fixed';
+                                textArea.style.left = '-999999px';
+                                textArea.style.top = '-999999px';
+                                document.body.appendChild(textArea);
+                                textArea.focus();
+                                textArea.select();
+
+                                try {
+                                    const successful = document.execCommand('copy');
+                                    if (successful) {
+                                        showMessage(`Basename "${text}" copied to clipboard`, 'success');
+                                    } else {
+                                        showMessage('Failed to copy basename to clipboard', 'warning');
+                                    }
+                                } catch (error) {
+                                    showMessage('Error copying basename: ' + error.message, 'danger');
+                                }
+
+                                document.body.removeChild(textArea);
+                            }
 
                             const toggleButton = document.createElement('i');
                             toggleButton.className = 'bi bi-play-circle-fill toggle-audio';
@@ -1376,7 +1449,7 @@
                 createVideoBtn.innerHTML = originalText;
                 return;
             }
-            const mp3_file = checked[0].closest('.file-item').dataset.filename;
+            const audio_file = checked[0].closest('.file-item').dataset.filename;
             const image_file = selectedImageRadio.closest('.thumbnail').dataset.filename;
             const videoBasename = document.getElementById('mp4-filename').value.trim();
             if (!videoBasename) {
@@ -1394,7 +1467,7 @@
             fetch('/create_video', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ mp3_file, image_file, video_basename: videoBasename })
+                body: JSON.stringify({ mp3_file: audio_file, image_file, video_basename: videoBasename })
             })
             .then(response => response.json())
             .then(data => {

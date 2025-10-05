@@ -4,3 +4,4 @@ mutagen
 audioop-lts
 moviepy
 flask
+flask-cors

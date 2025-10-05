@@ -2,6 +2,7 @@
 import os
 import functions
 from flask import Flask, render_template, request, jsonify, send_from_directory
+from flask_cors import CORS
 from google.cloud import texttospeech
 import configparser
 from werkzeug.utils import secure_filename
@@ -10,6 +11,7 @@ from create_mp4 import create_video  # new import
 from pydub import AudioSegment
 
 app = Flask(__name__)
+CORS(app)  # Enable CORS for all routes
 
 # Read config
 config = configparser.ConfigParser()
@@ -19,6 +21,8 @@ config.read('variables.cfg', encoding='utf-8')
 WORKDIR = config['DEFAULT']['workdir']
 PICTURES_DIR = config['DEFAULT']['pictures']
 OUTPUT_DIR = config['DEFAULT']['tts_output_dir']
+COMBINED_AUDIO_DIR = config['DEFAULT']['combined_audio_dir']
+VIDEOS_DIR = config['DEFAULT']['videos_dir']
 
 @app.route('/')
 def index():
@@ -62,7 +66,7 @@ def process_text():
 @app.route('/list_files')
 def list_files():
     """List all audio files in the TTS output directory sorted by timestamp"""
-    files = [f for f in os.listdir(OUTPUT_DIR) if f.endswith(('.mp3', '.wav'))]
+    files = [f for f in os.listdir(OUTPUT_DIR) if f.endswith(('.mp3', '.wav', '.m4a'))]
 
     # Sort by Unix timestamp filename (chronological order)
     files.sort(key=lambda x: float(os.path.splitext(x)[0]))
@@ -71,8 +75,8 @@ def list_files():
 
 @app.route('/list_combined_files')
 def list_combined_files():
-    """List all combined MP3 and WAV files in the work directory"""
-    files = [f for f in os.listdir(WORKDIR) if f.endswith(('.mp3', '.wav'))]
+    """List all combined MP3 and WAV files in the combined audio directory"""
+    files = [f for f in os.listdir(COMBINED_AUDIO_DIR) if f.endswith(('.mp3', '.wav', '.m4a'))]
     files.sort()
     return jsonify({'files': files})
 
@@ -86,8 +90,8 @@ def list_images():
 
 @app.route('/list_videos')
 def list_videos():
-    """List all MP4 files in the work directory"""
-    files = [f for f in os.listdir(WORKDIR) if f.endswith('.mp4')]
+    """List all MP4 files in the videos directory"""
+    files = [f for f in os.listdir(VIDEOS_DIR) if f.endswith('.mp4')]
     files.sort()
     return jsonify({'videos': files})
 
@@ -99,7 +103,7 @@ def serve_audio(filename):
 @app.route('/combined_audio/<filename>')
 def serve_combined_audio(filename):
     """Serve a combined audio file for playback"""
-    return send_from_directory(WORKDIR, filename)
+    return send_from_directory(COMBINED_AUDIO_DIR, filename)
 
 
 @app.route('/combine', methods=['POST'])
@@ -117,7 +121,8 @@ def combine_files():
     # Determine output format based on majority of input files
     mp3_count = sum(1 for f in sorted_files if f.lower().endswith('.mp3'))
     wav_count = sum(1 for f in sorted_files if f.lower().endswith('.wav'))
-    output_format = 'mp3'  # if mp3_count >= wav_count else 'wav'
+    m4a_count = sum(1 for f in sorted_files if f.lower().endswith('.m4a'))
+    output_format = 'mp3'  # Default to mp3, could be enhanced to choose based on majority
 
     try:
         # Create an empty audio segment
@@ -132,7 +137,7 @@ def combine_files():
 
         # Export with chosen format
         output_file = f"{basename}.{output_format}"
-        output_path = os.path.join(WORKDIR, output_file)
+        output_path = os.path.join(COMBINED_AUDIO_DIR, output_file)
         combined.export(output_path, format=output_format)
 
         return jsonify({
@@ -146,7 +151,7 @@ def combine_files():
 
 @app.route('/combine_combined_files', methods=['POST'])
 def combine_combined_files():
-    """Combine selected files in WORKDIR and save the result in WORKDIR"""
+    """Combine selected files in COMBINED_AUDIO_DIR and save the result in COMBINED_AUDIO_DIR"""
     data = request.get_json()
     sorted_files = data.get('sorted_files', [])
     basename = data.get('basename', '')
@@ -159,16 +164,17 @@ def combine_combined_files():
     # Determine output format based on majority of input files
     mp3_count = sum(1 for f in sorted_files if f.lower().endswith('.mp3'))
     wav_count = sum(1 for f in sorted_files if f.lower().endswith('.wav'))
-    output_format = 'mp3'  # if mp3_count >= wav_count else 'wav'
+    m4a_count = sum(1 for f in sorted_files if f.lower().endswith('.m4a'))
+    output_format = 'mp3'  # Default to mp3, could be enhanced to choose based on majority
 
     try:
         combined = AudioSegment.empty()
         for file in sorted_files:
-            file_path = os.path.join(WORKDIR, file)
+            file_path = os.path.join(COMBINED_AUDIO_DIR, file)
             segment = AudioSegment.from_file(file_path)
             combined += segment
         output_file = f"{basename}.{output_format}"
-        output_path = os.path.join(WORKDIR, output_file)
+        output_path = os.path.join(COMBINED_AUDIO_DIR, output_file)
         combined.export(output_path, format=output_format)
         return jsonify({'status': 'success', 'message': 'Files combined successfully', 'output_file': output_file})
     except Exception as e:
@@ -177,9 +183,9 @@ def combine_combined_files():
 
 @app.route('/create_video', methods=['POST'])
 def create_video_route():
-    """Create an MP4 file using a selected combined mp3/wav file and a selected image"""
+    """Create an MP4 file using a selected combined audio file and a selected image"""
     data = request.json
-    audio_file = data.get('mp3_file')  # Can be either MP3 or WAV file
+    audio_file = data.get('mp3_file')  # Can be MP3, WAV, or M4A file
     image_file = data.get('image_file')
     video_basename = data.get('video_basename', '').strip()
     
@@ -189,11 +195,11 @@ def create_video_route():
     if not video_basename:
         return jsonify({'status': 'error', 'message': 'Please provide a basename for the video output file'})
     
-    audio_path = os.path.join(WORKDIR, audio_file)
+    audio_path = os.path.join(COMBINED_AUDIO_DIR, audio_file)
     image_path = os.path.join(PICTURES_DIR, image_file)
 
     try:
-        output_file = create_video(image_path=image_path, audio_path=audio_path, video_basename=video_basename)
+        output_file = create_video(image_path=image_path, audio_path=audio_path, video_basename=video_basename, videos_dir=VIDEOS_DIR)
         return jsonify({'status': 'success', 'message': 'MP4 file created successfully', 'output_file': output_file})
     except Exception as e:
         return jsonify({'status': 'error', 'message': str(e)})
@@ -206,7 +212,7 @@ def serve_image(filename):
 @app.route('/videos/<path:filename>')
 def serve_video_file(filename):
     """Serve a video file"""
-    return send_from_directory(WORKDIR, filename)
+    return send_from_directory(VIDEOS_DIR, filename)
 
 @app.route('/delete_files', methods=['POST'])
 def delete_files():
@@ -216,8 +222,8 @@ def delete_files():
     deleted = []
     errors = []
     for filename in files:
-        # Only allow deletion of .mp3 or .wav in OUTPUT_DIR
-        if not (filename.endswith('.mp3') or filename.endswith('.wav')):
+        # Only allow deletion of .mp3, .wav, or .m4a in OUTPUT_DIR
+        if not (filename.endswith('.mp3') or filename.endswith('.wav') or filename.endswith('.m4a')):
             errors.append(f"Invalid file type: {filename}")
             continue
         file_path = os.path.join(OUTPUT_DIR, filename)
@@ -235,17 +241,17 @@ def delete_files():
 
 @app.route('/delete_combined_files', methods=['POST'])
 def delete_combined_files():
-    """Delete selected combined audio files from the work directory"""
+    """Delete selected combined audio files from the combined audio directory"""
     data = request.get_json()
     files = data.get('files', [])
     deleted = []
     errors = []
     for filename in files:
-        # Only allow deletion of .mp3 or .wav in WORKDIR
-        if not (filename.endswith('.mp3') or filename.endswith('.wav')):
+        # Only allow deletion of .mp3, .wav, or .m4a in COMBINED_AUDIO_DIR
+        if not (filename.endswith('.mp3') or filename.endswith('.wav') or filename.endswith('.m4a')):
             errors.append(f"Invalid file type: {filename}")
             continue
-        file_path = os.path.join(WORKDIR, filename)
+        file_path = os.path.join(COMBINED_AUDIO_DIR, filename)
         if os.path.isfile(file_path):
             try:
                 os.remove(file_path)
@@ -260,7 +266,7 @@ def delete_combined_files():
 
 @app.route('/delete_videos', methods=['POST'])
 def delete_videos():
-    """Delete selected video files from the work directory"""
+    """Delete selected video files from the videos directory"""
     data = request.get_json()
     files = data.get('files', [])
     deleted = []
@@ -269,7 +275,7 @@ def delete_videos():
         if not filename.endswith('.mp4'):
             errors.append(f"Invalid file type: {filename}")
             continue
-        file_path = os.path.join(WORKDIR, filename)
+        file_path = os.path.join(VIDEOS_DIR, filename)
         if os.path.isfile(file_path):
             try:
                 os.remove(file_path)
@@ -287,7 +293,7 @@ def delete_videos():
 
 @app.route('/upload_combined_files', methods=['POST'])
 def upload_combined_files():
-    """Handle upload of MP3/WAV files to WORKDIR for Combined Audio Files section"""
+    """Handle upload of MP3/WAV/M4A files to COMBINED_AUDIO_DIR for Combined Audio Files section"""
     if 'files' not in request.files and not request.files:
         # For fetch+FormData, files may be in request.files as a MultiDict
         files = request.files.getlist('files')
@@ -299,10 +305,10 @@ def upload_combined_files():
     errors = []
     for file in files:
         filename = secure_filename(file.filename)
-        if not (filename.endswith('.mp3') or filename.endswith('.wav')):
+        if not (filename.endswith('.mp3') or filename.endswith('.wav') or filename.endswith('.m4a')):
             errors.append(f"Invalid file type: {filename}")
             continue
-        save_path = os.path.join(WORKDIR, filename)
+        save_path = os.path.join(COMBINED_AUDIO_DIR, filename)
         try:
             file.save(save_path)
             saved.append(filename)
@@ -352,6 +358,8 @@ if __name__ == '__main__':
     parser.add_argument('--port', type=int, default=5000)
     args = parser.parse_args()
     
-    # Ensure output directory exists
+    # Ensure output directories exist
     os.makedirs(OUTPUT_DIR, exist_ok=True)
+    os.makedirs(COMBINED_AUDIO_DIR, exist_ok=True)
+    os.makedirs(VIDEOS_DIR, exist_ok=True)
     app.run(host=args.host, port=args.port, debug=True)
