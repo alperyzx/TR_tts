@@ -6,15 +6,17 @@ Analyzes givenText.txt to find longest sentences without proper punctuation
 """
 
 import re
+import functions
 
 
-def analyze_sentences(file_path='givenText.txt'):
+def analyze_sentences(file_path='givenText.txt', apply_preprocessing=True):
     """
     Reads the given text file and analyzes sentences to find the longest ones
     without proper punctuation marks for natural speech.
     
     Args:
         file_path: Path to the text file to analyze
+        apply_preprocessing: If True, applies the TTS preprocessing functions before analysis
         
     Returns:
         List of tuples (word_count, sentence) sorted by word count in descending order
@@ -29,19 +31,38 @@ def analyze_sentences(file_path='givenText.txt'):
         print(f"Error reading file: {e}")
         return []
     
+    # Apply preprocessing pipeline if requested
+    if apply_preprocessing:
+        print("Applying TTS preprocessing functions...")
+        try:
+            pfirstCheck = functions.firstCheck(text)
+            prepParen = functions.repParen(pfirstCheck.lower())
+            prepWords = functions.repWords(prepParen)
+            pLastcheck = functions.lastCheck(prepWords)
+            # Apply only the simplified_rules with rules3 (skip wrapSoftloud)
+            text = functions.apply_simplified_rules(pLastcheck, functions.rules3)
+            print("Preprocessing complete (with rules3 applied)!\n")
+        except Exception as e:
+            print(f"Warning: Error during preprocessing: {e}")
+            print("Continuing with original text...\n")
+    
     # Split text by sentence-ending punctuation
-    # Consider ., !, ?, as sentence endings
-    sentences = re.split(r'[.!?]+', text)
+    # Consider ., !, ?, as sentence endings - but capture them too
+    sentences = re.split(r'([.!?]+)', text)
     
     sentence_data = []
     
-    for sentence in sentences:
-        # Clean up the sentence
-        sentence = sentence.strip()
+    # Process pairs of sentence and its ending punctuation
+    for i in range(0, len(sentences)-1, 2):
+        sentence = sentences[i].strip()
+        ending_punct = sentences[i+1] if i+1 < len(sentences) else ''
         
         # Skip empty sentences
         if not sentence:
             continue
+        
+        # Combine sentence with its ending punctuation
+        full_sentence = sentence + ending_punct
         
         # Count words (split by whitespace)
         words = sentence.split()
@@ -49,8 +70,8 @@ def analyze_sentences(file_path='givenText.txt'):
         
         # Only consider sentences with at least 5 words
         if word_count >= 5:
-            # Check if sentence has internal punctuation (commas, semicolons, colons)
-            comma_count = sentence.count(',')
+            # Check if sentence has internal punctuation (commas, semicolons, colons, ¿)
+            comma_count = sentence.count(',') + sentence.count('¿')
             semicolon_count = sentence.count(';')
             colon_count = sentence.count(':')
             internal_punct_count = comma_count + semicolon_count + colon_count
@@ -59,14 +80,14 @@ def analyze_sentences(file_path='givenText.txt'):
             punct_density = internal_punct_count / word_count if word_count > 0 else 0
             
             # Calculate the longest segment without punctuation
-            # Split by any internal punctuation
-            segments = re.split(r'[,;:]', sentence)
+            # Split by any internal punctuation (including ¿)
+            segments = re.split(r'[,;:¿]', sentence)
             max_segment_length = max(len(seg.split()) for seg in segments) if segments else word_count
             
             # Store sentence with metadata
             sentence_data.append({
                 'word_count': word_count,
-                'sentence': sentence,
+                'sentence': full_sentence,  # Use full_sentence with ending punctuation
                 'comma_count': comma_count,
                 'internal_punct': internal_punct_count,
                 'punct_density': punct_density,
@@ -111,11 +132,11 @@ def print_analysis(sentence_data, top_n=20, show_density=False):
         print(header)
         print("-" * 100)
         
-        # Highlight the segments by showing them split by punctuation
-        segments = re.split(r'([,;:])', sentence)
+        # Highlight the segments by showing them split by punctuation (including ¿)
+        segments = re.split(r'([,;:¿])', sentence)
         formatted = ""
         for seg in segments:
-            if seg in [',', ';', ':']:
+            if seg in [',', ';', ':', '¿']:
                 formatted += seg + " "
             else:
                 seg_words = len(seg.split())
@@ -130,13 +151,14 @@ def print_analysis(sentence_data, top_n=20, show_density=False):
         print()
 
 
-def find_sentences_without_punctuation(file_path='givenText.txt', min_words=15):
+def find_sentences_without_punctuation(file_path='givenText.txt', min_words=15, apply_preprocessing=True):
     """
     Finds sentences that are longer than min_words and have no internal punctuation.
     
     Args:
         file_path: Path to the text file to analyze
         min_words: Minimum word count to consider
+        apply_preprocessing: If True, applies the TTS preprocessing functions before analysis
         
     Returns:
         List of tuples (word_count, sentence) for sentences without punctuation
@@ -148,28 +170,47 @@ def find_sentences_without_punctuation(file_path='givenText.txt', min_words=15):
         print(f"Error: File '{file_path}' not found!")
         return []
     
-    # Split by sentence-ending punctuation
-    sentences = re.split(r'[.!?]+', text)
+    # Apply preprocessing pipeline if requested
+    if apply_preprocessing:
+        try:
+            pfirstCheck = functions.firstCheck(text)
+            prepParen = functions.repParen(pfirstCheck.lower())
+            prepWords = functions.repWords(prepParen)
+            pLastcheck = functions.lastCheck(prepWords)
+            # Apply only the simplified_rules with rules3 (skip wrapSoftloud)
+            text = functions.apply_simplified_rules(pLastcheck, functions.rules3)
+        except Exception as e:
+            print(f"Warning: Error during preprocessing: {e}")
+    
+    # Split by sentence-ending punctuation - capture them too
+    sentences = re.split(r'([.!?]+)', text)
     
     no_punct_sentences = []
     
-    for sentence in sentences:
-        sentence = sentence.strip()
+    # Process pairs of sentence and its ending punctuation
+    for i in range(0, len(sentences)-1, 2):
+        sentence = sentences[i].strip()
+        ending_punct = sentences[i+1] if i+1 < len(sentences) else ''
+        
         if not sentence:
             continue
+        
+        # Combine sentence with its ending punctuation
+        full_sentence = sentence + ending_punct
         
         words = sentence.split()
         word_count = len(words)
         
-        # Check if sentence is long enough and has no internal punctuation
+        # Check if sentence is long enough and has no internal punctuation (including ¿)
         has_no_internal_punct = (
             ',' not in sentence and 
             ';' not in sentence and 
-            ':' not in sentence
+            ':' not in sentence and
+            '¿' not in sentence
         )
         
         if word_count >= min_words and has_no_internal_punct:
-            no_punct_sentences.append((word_count, sentence))
+            no_punct_sentences.append((word_count, full_sentence))
     
     # Sort by word count descending
     no_punct_sentences.sort(key=lambda x: -x[0])
@@ -215,7 +256,7 @@ def save_to_file(sentence_data, output_file='sentence_analysis.txt'):
         f.write("=" * 100 + "\n")
         f.write("TURKISH TEXT SENTENCE ANALYSIS - SENTENCES NEEDING PUNCTUATION\n")
         f.write("=" * 100 + "\n\n")
-        f.write("Format: [word_count] words | [max_unpunctuated_segment] words unpunctuated | [sentence]\n\n")
+        f.write("Format: [word_count] words | [max_unpunctuated_segment] words unpunctuated | [commas] | [sentence]\n\n")
         
         for i, data in enumerate(sentence_data, 1):
             word_count = data['word_count']
@@ -234,13 +275,19 @@ def save_to_file(sentence_data, output_file='sentence_analysis.txt'):
 
 def main():
     """Main function to run the analysis."""
-    print("Analyzing Turkish text for sentence length and punctuation...\n")
+    print("=" * 100)
+    print("TURKISH TEXT-TO-SPEECH SENTENCE ANALYZER")
+    print("=" * 100)
+    print("\nAnalyzing text AFTER applying TTS preprocessing functions...")
+    print("(firstCheck -> repParen -> repWords -> lastCheck -> apply_simplified_rules(rules3))")
+    print("Note: Skipping wrapSoftloud to avoid <prosody> tags in analysis\n")
     
-    # Analyze all sentences
-    print("ANALYSIS: Sentences with longest unpunctuated segments")
+    # Analyze all sentences with preprocessing
+    sentence_data = analyze_sentences(apply_preprocessing=True)
+    
+    print("\nANALYSIS: Sentences with longest unpunctuated segments")
     print("(This shows sentences where there are long stretches without commas/punctuation)")
     print()
-    sentence_data = analyze_sentences()
     print_analysis(sentence_data, top_n=30, show_density=True)
     
     print("\n\n")
