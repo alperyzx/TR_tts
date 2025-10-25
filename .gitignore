@@ -5,3 +5,6 @@ files/
 output/
 pictures/
 .venv/
+sentence_analysis.txt
+analysis_output.txt
+givenText.txt
